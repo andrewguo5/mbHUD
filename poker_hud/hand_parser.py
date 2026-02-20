@@ -2,7 +2,8 @@
 Hand parsing utilities for ACR hand history files.
 """
 
-from typing import List
+import re
+from typing import List, Optional
 
 
 def split_into_hands(content: str) -> List[str]:
@@ -74,3 +75,32 @@ def get_players_in_hand(hand: str) -> List[str]:
                 continue
 
     return players
+
+
+def extract_hand_id(hand: str) -> Optional[str]:
+    """
+    Extract the hand ID from a hand string.
+
+    The hand ID appears in the first line like:
+    "Hand #1234567890 - Holdem (No Limit) - $0.05/$0.10 - 2026/01/30 ..."
+
+    Args:
+        hand: String content of a single hand
+
+    Returns:
+        Hand ID string (e.g., "1234567890"), or None if not found
+
+    Example:
+        >>> hand = "Hand #1234567890 - Holdem..."
+        >>> extract_hand_id(hand)
+        "1234567890"
+    """
+    # Get first line
+    first_line = hand.split('\n')[0] if hand else ""
+
+    # Extract hand ID using regex: "Hand #<digits>"
+    match = re.match(r'Hand #(\d+)', first_line)
+    if match:
+        return match.group(1)
+
+    return None
