@@ -9,11 +9,28 @@ Real-time poker statistics tracker for ACR cash games.
 - Fast caching system
 - Simple setup and configuration
 
+## Installation
+
+1. **Clone the repository:**
+```bash
+git clone https://github.com/andrewguo5/mbHUD.git
+cd mbHUD
+```
+
+2. **Install the package:**
+```bash
+pip install -e .
+```
+
+This installs mbHUD and creates the `mbhud` command.
+
+**Note:** If you see "command not found: pip", use `pip3` instead. See [INSTALL.md](INSTALL.md) for detailed troubleshooting.
+
 ## Setup
 
-Run the setup script:
+Run the initialization:
 ```bash
-python3 mbhud_init.py
+mbhud init
 ```
 
 This will:
@@ -30,93 +47,100 @@ Default hand history locations:
 
 ### Start HUD (recommended):
 ```bash
-python3 mbhud_start.py
+mbhud start
 ```
 Flushes cache then starts live HUD.
 
-### Or run components separately:
-
-**Flush cache (process hands):**
+### View all commands:
 ```bash
-python3 mbhud_flush.py
+mbhud --help
 ```
 
-**Start live HUD:**
+## Commands
+
+**Initialize configuration:**
 ```bash
-python3 mbhud_live.py
+mbhud init
 ```
 
-**View overall stats:**
+**Start HUD (with auto-flush):**
 ```bash
-python3 display_stats.py
+mbhud start
 ```
 
-## Usage
+**Start HUD (without flush):**
+```bash
+mbhud live
+```
 
-### Live HUD (`mbhud_live.py`)
+**Flush cache:**
+```bash
+mbhud flush
+```
+
+**View stats:**
+```bash
+mbhud stats
+```
+
+**Clear cache:**
+```bash
+mbhud clear-cache
+```
+
+**Watch file updates (debug):**
+```bash
+mbhud watch
+```
+
+## How It Works
+
+### Live HUD
 
 Displays real-time stats for active tables.
 
 - Updates every 30 seconds
 - Shows players in clockwise order from your seat
 - Combines cached + live stats
+- Press `Ctrl+C` to stop
 
-**Stop:** Press `Ctrl+C`
+### Flush
 
-### Flush (`mbhud_flush.py`)
+Processes hand histories into cached `.agg` files.
 
-Processes all hand histories into cached `.agg` files.
-
-- Run before starting live HUD for first time
-- Run periodically to update cache with completed sessions
 - Skips already-processed files (fast)
+- Only processes new/modified files
+- Run after sessions to cache hands
 
-**When to flush:**
-- First time using mbHUD
-- After finishing a session (to cache those hands)
-- Before analyzing stats with `display_stats.py`
-
-### Display Stats (`display_stats.py`)
+### Stats Display
 
 Shows aggregate statistics across all sessions.
 
-- Reads from cached `.agg` files only
-- Does NOT include live (uncached) hands
+- Reads from cached `.agg` files
+- Includes live hands after flush
 - Sorts players by hand count
-
-**Tip:** Run `mbhud_flush.py` first to include recent sessions
-
-## Maintenance
-
-### Clear cache:
-```bash
-python3 mbhud_clear_cache.py
-```
-Safely removes all cached files. Prompts for confirmation.
-
-### Debug: Watch file updates
-```bash
-python3 watch_file.py
-```
-Shows latest hand as it's written to file.
 
 ## Troubleshooting
 
 **"No active tables detected"**
-- Play at least one hand (hand history file must update)
+- Play at least one hand (hand history must update)
 - Check hand history directory in `config.json`
-- Run `python3 mbhud_init.py` to reconfigure
+- Run `mbhud init` to reconfigure
 
 **Stats look wrong**
-- Run `python3 mbhud_flush.py` to refresh cache
-- Run `python3 mbhud_clear_cache.py` then flush to rebuild
+- Run `mbhud flush` to refresh cache
+- Run `mbhud clear-cache` then flush to rebuild
 
 **Live HUD not updating**
-- Wait for hand to complete (stats update after each hand)
+- Wait for hand to complete (updates after each hand)
 
 **Configuration issues**
 - Check `config.json` in project root
-- Run `python3 mbhud_init.py` to reconfigure
+- Run `mbhud init` to reconfigure
+
+**Command not found**
+- Make sure you ran `pip install -e .`
+- Check that Python's bin directory is in PATH
 
 ## Requirements
 

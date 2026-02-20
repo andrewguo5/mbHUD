@@ -1,0 +1,17 @@
+# Include important files in the package distribution
+include README.md
+include LICENSE
+include INSTALL.md
+include requirements.txt
+include config.json
+
+# Include all scripts
+recursive-include scripts *.py
+
+# Include all poker_hud package files
+recursive-include poker_hud *.py
+
+# Exclude cache and test files
+global-exclude *.pyc
+global-exclude __pycache__
+recursive-exclude data *
