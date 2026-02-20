@@ -11,19 +11,25 @@ from typing import Dict, Tuple
 from datetime import datetime
 
 from .stats import Stat
+from .config import AGG_FILES_DIR
 
 
 def get_agg_file_path(source_file: Path) -> Path:
     """
     Get the path to the .txt.agg file for a given source file.
 
+    The .agg file is stored in our data directory, not alongside the source file.
+    This keeps our generated files separate from ACR's download directory.
+
     Args:
         source_file: Path to the original hand history .txt file
 
     Returns:
-        Path to the .txt.agg file (may not exist yet)
+        Path to the .txt.agg file in the data directory (may not exist yet)
     """
-    return source_file.with_suffix(source_file.suffix + '.agg')
+    # Use the source filename + .agg extension, stored in our data directory
+    agg_filename = source_file.name + '.agg'
+    return AGG_FILES_DIR / agg_filename
 
 
 def agg_file_exists(source_file: Path) -> bool:

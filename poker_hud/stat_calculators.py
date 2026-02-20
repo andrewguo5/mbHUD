@@ -5,6 +5,7 @@ Each calculator takes a hand string and returns a dictionary mapping
 player names to (numerator, denominator) tuples.
 """
 
+import re
 from typing import Dict, Tuple
 from .stats import Stat
 
@@ -156,5 +157,103 @@ def calculate_pfr(hand: str) -> Dict[str, Tuple[int, int]]:
         num_raises = player_raises[player]
         num_opportunities = player_opportunities[player]
         result[player] = (num_raises, num_opportunities)
+
+    return result
+
+
+def calculate_bb100(hand: str) -> Dict[str, Tuple[float, int]]:
+    """
+    Calculate BB/100 (big blinds won per 100 hands) for all players in a hand.
+
+    BB/100 Definition:
+    - Numerator: Total big blinds won/lost in the hand (money in is negative, money won is positive)
+    - Denominator: 1 (counted per hand participated in)
+
+    Args:
+        hand: String content of a single hand
+
+    Returns:
+        Dictionary mapping player names to (bb_won, 1) tuples
+        Note: numerator is a float (big blinds), denominator is always 1
+
+    Example:
+        >>> calculate_bb100(hand)
+        {"alice": (5.0, 1), "bob": (-5.0, 1)}  # alice won 5 BB, bob lost 5 BB
+    """
+    # Extract big blind amount from hand header
+    # Format: "Hand #... - Holdem (No Limit) - $0.05/$0.10 - ..."
+    #                                            SB   /  BB
+    bb_amount = None
+    lines = hand.split('\n')
+
+    for line in lines[:3]:  # BB info is in first few lines
+        match = re.search(r'\$[\d.]+/\$([\d.]+)', line)
+        if match:
+            bb_amount = float(match.group(1))
+            break
+
+    if bb_amount is None:
+        # Can't calculate without BB amount
+        return {}
+
+    result = {}
+    player_money = {}  # Track net money for each player
+
+    # Track all players who participate
+    for line in lines:
+        line = line.strip()
+
+        # Track money going in (posts, calls, raises, bets)
+        # Format examples:
+        #   "player posts the small blind $0.05"
+        #   "player calls $0.30"
+        #   "player bets $0.71"
+        #   "player raises $0.65 to $0.70" - first $ is additional amount put in
+        words = line.split()
+        if len(words) >= 3:
+            player = words[0]
+            action = words[1]
+
+            # Actions that put money in - extract first dollar amount
+            if action in ('posts', 'calls', 'bets', 'raises'):
+                # Extract dollar amount (first $ after action)
+                for word in words[2:]:
+                    if word.startswith('$'):
+                        amount_str = word.replace('$', '').replace(',', '')
+                        try:
+                            amount = float(amount_str)
+                            if player not in player_money:
+                                player_money[player] = 0.0
+                            player_money[player] -= amount  # Money in is negative
+                            break
+                        except ValueError:
+                            pass
+
+        # Track money won (in SUMMARY section)
+        # Format: "Seat N: player ... won $amount"
+        if 'won $' in line:
+            match = re.search(r'Seat \d+: (\w+).*won \$([\d.]+)', line)
+            if match:
+                player = match.group(1)
+                amount = float(match.group(2))
+                if player not in player_money:
+                    player_money[player] = 0.0
+                player_money[player] += amount  # Money won is positive
+
+        # Track uncalled bets returned
+        # Format: "Uncalled bet ($X) returned to player"
+        if line.startswith('Uncalled bet'):
+            match = re.search(r'Uncalled bet \(\$([\d.]+)\) returned to (\w+)', line)
+            if match:
+                amount = float(match.group(1))
+                player = match.group(2)
+                if player not in player_money:
+                    player_money[player] = 0.0
+                player_money[player] += amount  # Money returned is positive
+
+    # Convert to big blinds
+    for player, net_money in player_money.items():
+        bb_won = net_money / bb_amount
+        result[player] = (bb_won, 1)
 
     return result
