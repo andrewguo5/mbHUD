@@ -16,7 +16,7 @@ def main():
     print("=" * 80)
     print()
 
-    result = flush_all(verbose=True)
+    result = flush_all(verbose=False)
 
     print()
     print("=" * 80)

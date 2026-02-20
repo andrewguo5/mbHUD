@@ -24,7 +24,8 @@ DEFAULT_STAT_CALCULATORS = {
 def process_session_file(
     file_path: Path,
     stat_calculators: Optional[Dict[Stat, callable]] = None,
-    force_reprocess: bool = False
+    force_reprocess: bool = False,
+    verbose: bool = True
 ) -> Dict[str, Dict[Stat, Tuple[int, int]]]:
     """
     Process a single hand history file and return aggregated statistics.
@@ -37,6 +38,7 @@ def process_session_file(
         stat_calculators: Dictionary mapping Stat -> calculator function
                          (default: VPIP and PFR)
         force_reprocess: If True, ignore existing .txt.agg and reprocess
+        verbose: If True, print progress messages
 
     Returns:
         Dictionary mapping player -> (Stat -> (num, denom))
@@ -53,16 +55,19 @@ def process_session_file(
 
     # Check if .txt.agg exists and we're not forcing reprocess
     if agg_file_exists(file_path) and not force_reprocess:
-        print(f"Loading cached stats from {agg_file.name}")
+        if verbose:
+            print(f"Loading cached stats from {agg_file.name}")
         return read_agg_file(agg_file)
 
     # Process the file
-    print(f"Processing {file_path.name}...")
+    if verbose:
+        print(f"Processing {file_path.name}...")
     content = read_hand_history_file(file_path)
     hands = split_into_hands(content)
 
     if not hands:
-        print(f"  Warning: No hands found in {file_path.name}")
+        if verbose:
+            print(f"  Warning: No hands found in {file_path.name}")
         return {}
 
     # Aggregate statistics
@@ -70,7 +75,8 @@ def process_session_file(
 
     # Write to .txt.agg file
     write_agg_file(file_path, session_stats, len(hands))
-    print(f"  Processed {len(hands)} hands, wrote to {agg_file.name}")
+    if verbose:
+        print(f"  Processed {len(hands)} hands, wrote to {agg_file.name}")
 
     return session_stats
 

@@ -65,6 +65,7 @@ def display_hud(tracker: LiveStatsTracker, last_flush_time: float):
         print("No active tables detected.")
         print("\nWaiting for you to join a table...")
         print("(Hand history file must be modified after last flush)")
+        print("\nPress Ctrl+C to quit")
         return
 
     # Display each table
@@ -139,7 +140,7 @@ def main():
     print("Initializing tracker...")
 
     # Initialize the live stats tracker
-    tracker = LiveStatsTracker(username=USERNAME)
+    tracker = LiveStatsTracker()
 
     # Initial update
     tracker.update()

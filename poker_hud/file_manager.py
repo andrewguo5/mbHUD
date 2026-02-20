@@ -7,17 +7,14 @@ from the Americas Cardroom download directory.
 
 import os
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 
-from .config import USERNAME
+from .config import HAND_HISTORY_DIR
 
 
-def get_hand_history_directory(username: Optional[str] = None) -> Path:
+def get_hand_history_directory() -> Path:
     """
-    Get the path to the ACR hand history directory for a user.
-
-    Args:
-        username: ACR username (default: uses config.USERNAME)
+    Get the path to the ACR hand history directory from config.
 
     Returns:
         Path to the hand history directory
@@ -25,30 +22,20 @@ def get_hand_history_directory(username: Optional[str] = None) -> Path:
     Raises:
         FileNotFoundError: If the directory doesn't exist
     """
-    if username is None:
-        username = USERNAME
-
-    home = Path.home()
-    hh_dir = home / "Downloads" / "AmericasCardroom" / "handHistory" / username
-
-    if not hh_dir.exists():
+    if not HAND_HISTORY_DIR.exists():
         raise FileNotFoundError(
-            f"Hand history directory not found: {hh_dir}\n"
-            f"Expected location: ~/Downloads/AmericasCardroom/handHistory/{username}/"
+            f"Hand history directory not found: {HAND_HISTORY_DIR}\n"
+            f"Check config.json or run 'python3 mbhud_init.py' to reconfigure."
         )
 
-    return hh_dir
+    return HAND_HISTORY_DIR
 
 
-def find_hand_history_files(
-    username: Optional[str] = None,
-    pattern: str = "*.txt"
-) -> List[Path]:
+def find_hand_history_files(pattern: str = "*.txt") -> List[Path]:
     """
-    Find all hand history files in the user's directory.
+    Find all hand history files in the configured directory.
 
     Args:
-        username: ACR username (default: uses config.USERNAME)
         pattern: File pattern to match (default: "*.txt")
 
     Returns:
@@ -57,7 +44,7 @@ def find_hand_history_files(
     Raises:
         FileNotFoundError: If the directory doesn't exist
     """
-    hh_dir = get_hand_history_directory(username)
+    hh_dir = get_hand_history_directory()
     files = sorted(hh_dir.glob(pattern))
     return files
 
@@ -150,15 +137,11 @@ def get_file_info(file_path: Path) -> dict:
     return info
 
 
-def process_all_files(
-    username: Optional[str] = None,
-    callback=None
-) -> List[dict]:
+def process_all_files(callback=None) -> List[dict]:
     """
-    Process all hand history files for a user.
+    Process all hand history files.
 
     Args:
-        username: ACR username (default: uses config.USERNAME)
         callback: Optional function to call for each file, receives (file_path, content)
 
     Returns:
@@ -169,7 +152,7 @@ def process_all_files(
         ...     print(f"Processing {path.name}: {len(content)} bytes")
         >>> files = process_all_files(callback=print_file)
     """
-    files = find_hand_history_files(username)
+    files = find_hand_history_files()
     results = []
 
     for file_path in files:

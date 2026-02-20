@@ -66,7 +66,7 @@ def is_live_file(file_path: Path) -> bool:
     return file_mtime > last_flush
 
 
-def flush_all(username: Optional[str] = None, verbose: bool = True) -> dict:
+def flush_all(verbose: bool = True) -> dict:
     """
     Flush all hand history files to .agg cache files.
 
@@ -76,8 +76,7 @@ def flush_all(username: Optional[str] = None, verbose: bool = True) -> dict:
     - If .agg missing: process the file and create .agg
 
     Args:
-        username: Username to process files for (uses config.USERNAME if None)
-        verbose: If True, print progress messages
+        verbose: If True, print detailed progress; if False, print summary only
 
     Returns:
         Dictionary with flush statistics:
@@ -85,6 +84,7 @@ def flush_all(username: Optional[str] = None, verbose: bool = True) -> dict:
             'total_files': int,
             'skipped': int,  # Already had .agg files
             'processed': int,  # Newly processed
+            'total_hands': int,  # Total hands processed
             'last_flush_time': float  # Timestamp after flush
         }
 
@@ -92,45 +92,52 @@ def flush_all(username: Optional[str] = None, verbose: bool = True) -> dict:
         >>> result = flush_all()
         >>> print(f"Processed {result['processed']} new files")
     """
+    from .hand_parser import split_into_hands
+
     # Find all hand history files
-    files = find_hand_history_files(username)
+    files = find_hand_history_files()
 
     total_files = len(files)
     skipped = 0
     processed = 0
+    total_hands = 0
 
-    if verbose:
-        print(f"Found {total_files} hand history files")
-        print(f"{'='*80}")
+    print(f"Found {total_files} hand history files")
 
     for i, file_path in enumerate(files, 1):
         if agg_file_exists(file_path):
-            if verbose:
-                agg_file = get_agg_file_path(file_path)
-                print(f"[{i}/{total_files}] Skipping {file_path.name} (cached in {agg_file.name})")
             skipped += 1
         else:
-            if verbose:
-                print(f"[{i}/{total_files}] Processing {file_path.name}...")
-
             # Process the file and create .agg
-            process_session_file(file_path, force_reprocess=False)
+            session_stats = process_session_file(file_path, force_reprocess=False, verbose=False)
+
+            # Count hands from first player's N stat
+            if session_stats:
+                from .stats import Stat
+                first_player = next(iter(session_stats.values()))
+                hands_in_file = first_player.get(Stat.N, (0, 0))[0]
+                total_hands += hands_in_file
+
+                print(f"  [{i}/{total_files}] {file_path.name[:16]}..: Processed {hands_in_file} hands")
+
             processed += 1
 
     # Get the new last flush time
     last_flush = get_last_flush_time()
 
-    if verbose:
-        print(f"\n{'='*80}")
-        print(f"Flush complete:")
-        print(f"  Total files: {total_files}")
-        print(f"  Skipped (already cached): {skipped}")
-        print(f"  Newly processed: {processed}")
-        print(f"  Last flush time: {last_flush}")
+    print()
+    print("─" * 80)
+    print("Flush Summary:")
+    print(f"  Files processed: {processed}")
+    if skipped > 0:
+        print(f"  Files skipped (cached): {skipped}")
+    print(f"  Total hands: {total_hands}")
+    print("─" * 80)
 
     return {
         'total_files': total_files,
         'skipped': skipped,
         'processed': processed,
+        'total_hands': total_hands,
         'last_flush_time': last_flush
     }

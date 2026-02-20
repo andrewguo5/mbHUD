@@ -32,14 +32,10 @@ class LiveStatsTracker:
         stats = tracker.get_player_stats("aampersands")
     """
 
-    def __init__(self, username: Optional[str] = None):
+    def __init__(self):
         """
         Initialize the live stats tracker.
-
-        Args:
-            username: Username to track files for (uses config.USERNAME if None)
         """
-        self.username = username
         self.last_flush_time = get_last_flush_time()
         self.processed_hand_ids: Set[str] = set()  # Track which hands we've seen
         self.live_stats: Dict[str, Dict[Stat, Tuple[float, int]]] = {}  # In-memory stats
@@ -128,7 +124,7 @@ class LiveStatsTracker:
         self._check_flush_reset()
 
         # Find all hand history files
-        all_files = find_hand_history_files(self.username)
+        all_files = find_hand_history_files()
 
         # Identify live files (modified after last flush)
         current_live_files = {f for f in all_files if is_live_file(f)}
