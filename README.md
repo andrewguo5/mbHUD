@@ -6,31 +6,47 @@ Real-time poker statistics tracker for ACR cash games.
 
 - Tracks useful stats (VPIP, PFR, BB100)
 - Real-time display in command line
+- Fast caching system
+- Simple setup and configuration
 
 ## Setup
 
-1. Set your ACR username in `poker_hud/config.py`:
-   ```python
-   USERNAME = "your_username_here"
-   ```
+Run the setup script:
+```bash
+python3 mbhud_init.py
+```
 
-2. Ensure ACR saves hand histories to default location:
-   - Mac: `~/Downloads/AmericasCardroom/handHistory/<username>/`
-   - Windows: `C:\ACR Poker\handHistory\<username>`
+This will:
+- Prompt for your ACR username
+- Prompt for your hand history directory
+- Process existing hand histories
+- Create configuration file
+
+Default hand history locations:
+- Mac: `~/Downloads/AmericasCardroom/handHistory/<username>/`
+- Windows: `C:\ACR Poker\handHistory\<username>`
 
 ## Quick Start
 
-### Initial flush (process all existing hands):
+### Start HUD (recommended):
+```bash
+python3 mbhud_start.py
+```
+Flushes cache then starts live HUD.
+
+### Or run components separately:
+
+**Flush cache (process hands):**
 ```bash
 python3 mbhud_flush.py
 ```
 
-### Run live HUD:
+**Start live HUD:**
 ```bash
 python3 mbhud_live.py
 ```
 
-### View overall stats (all sessions):
+**View overall stats:**
 ```bash
 python3 display_stats.py
 ```
@@ -70,19 +86,13 @@ Shows aggregate statistics across all sessions.
 
 **Tip:** Run `mbhud_flush.py` first to include recent sessions
 
-## Troubleshooting
+## Maintenance
 
-**"No active tables detected"**
-- Play at least one hand (hand history file must update)
-- Check that hand histories are saved to expected directory
-- Verify username in `config.py` matches ACR username
-
-**Stats look wrong**
-- Run `python3 mbhud_flush.py` to refresh cache
-- Delete `data/agg_files/` and re-flush to rebuild from scratch
-
-**Live HUD not updating**
-- Wait for hand to complete (stats update after each hand)
+### Clear cache:
+```bash
+python3 mbhud_clear_cache.py
+```
+Safely removes all cached files. Prompts for confirmation.
 
 ### Debug: Watch file updates
 ```bash
@@ -90,14 +100,23 @@ python3 watch_file.py
 ```
 Shows latest hand as it's written to file.
 
-### Force reprocess all files
-```bash
-# Delete cache
-rm -rf data/agg_files/
+## Troubleshooting
 
-# Rebuild
-python3 mbhud_flush.py
-```
+**"No active tables detected"**
+- Play at least one hand (hand history file must update)
+- Check hand history directory in `config.json`
+- Run `python3 mbhud_init.py` to reconfigure
+
+**Stats look wrong**
+- Run `python3 mbhud_flush.py` to refresh cache
+- Run `python3 mbhud_clear_cache.py` then flush to rebuild
+
+**Live HUD not updating**
+- Wait for hand to complete (stats update after each hand)
+
+**Configuration issues**
+- Check `config.json` in project root
+- Run `python3 mbhud_init.py` to reconfigure
 
 ## Requirements
 
