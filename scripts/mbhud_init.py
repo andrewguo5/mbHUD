@@ -66,7 +66,8 @@ def main():
 
     # Step 3: Update config.json
     print("\nStep 3: Saving configuration...")
-    config_path = Path(__file__).parent / "config.json"
+    # Use poker_hud.config to get correct paths
+    from poker_hud.config import CONFIG_FILE, AGG_FILES_DIR
 
     config_data = {
         "username": username,
@@ -74,12 +75,12 @@ def main():
     }
 
     try:
-        with open(config_path, 'w') as f:
+        with open(CONFIG_FILE, 'w') as f:
             json.dump(config_data, f, indent=2)
 
         print(f"✓ Username: {username}")
         print(f"✓ Hand history directory: {hh_dir}")
-        print(f"✓ Config saved to: {config_path}")
+        print(f"✓ Config saved to: {CONFIG_FILE}")
 
     except Exception as e:
         print(f"Error saving config: {e}")
@@ -87,9 +88,8 @@ def main():
 
     # Step 4: Create data directories
     print("\nStep 4: Creating data directories...")
-    data_dir = Path(__file__).parent / "data" / "agg_files"
-    data_dir.mkdir(parents=True, exist_ok=True)
-    print(f"✓ Created: {data_dir}")
+    AGG_FILES_DIR.mkdir(parents=True, exist_ok=True)
+    print(f"✓ Created: {AGG_FILES_DIR}")
 
     # Step 5: Initial flush
     print("\nStep 5: Processing existing hand histories...")

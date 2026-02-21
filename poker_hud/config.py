@@ -22,7 +22,7 @@ def load_config():
     if not CONFIG_FILE.exists():
         raise FileNotFoundError(
             f"Config file not found: {CONFIG_FILE}\n"
-            "Run 'python3 mbhud_init.py' to set up configuration."
+            "Run 'mbhud init' to set up configuration."
         )
 
     with open(CONFIG_FILE, 'r') as f:
@@ -37,7 +37,7 @@ def get_username():
     if not username:
         raise ValueError(
             "Username not configured in config.json\n"
-            "Run 'python3 mbhud_init.py' to set up configuration."
+            "Run 'mbhud init' to set up configuration."
         )
 
     return username
@@ -51,7 +51,7 @@ def get_hand_history_dir():
     if not hh_dir:
         raise ValueError(
             "Hand history directory not configured in config.json\n"
-            "Run 'python3 mbhud_init.py' to set up configuration."
+            "Run 'mbhud init' to set up configuration."
         )
 
     return Path(hh_dir)
