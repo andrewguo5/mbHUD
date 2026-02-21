@@ -24,8 +24,7 @@ def main():
     total_hands = 0
 
     for i, file_path in enumerate(files, 1):
-        print(f"[{i}/{len(files)}] Processing {file_path.name}...")
-        stats = process_session_file(file_path)
+        stats = process_session_file(file_path, verbose=False)
         session_stats_list.append(stats)
 
         # Count hands from first player's N stat
