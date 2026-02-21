@@ -2,6 +2,9 @@
 data/agg_files/
 *.agg
 
+# Hand history backups
+data/handhistory/
+
 # Python cache
 __pycache__/
 *.py[cod]

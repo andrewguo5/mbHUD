@@ -64,5 +64,12 @@ def watch():
     main()
 
 
+@cli.command()
+def backup():
+    """Backup hand history files to persistent storage"""
+    from scripts.backup_handhistory import backup_handhistory
+    backup_handhistory()
+
+
 if __name__ == '__main__':
     cli()
