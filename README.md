@@ -6,7 +6,6 @@ Real-time poker statistics tracker for ACR cash games.
 
 - Tracks useful stats (VPIP, PFR, BB100)
 - Real-time display in command line
-- Fast caching system
 - Simple setup and configuration
 
 ## Installation
