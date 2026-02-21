@@ -222,7 +222,8 @@ def calculate_bb100(hand: str) -> Dict[str, Tuple[float, int]]:
     known_players = get_players_in_hand(hand)
 
     result = {}
-    player_money = {}  # Track net money for each player
+    # Initialize all players who were dealt in with 0.0
+    player_money = {player: 0.0 for player in known_players}
 
     # Track all players who participate
     for line in lines:
@@ -252,8 +253,6 @@ def calculate_bb100(hand: str) -> Dict[str, Tuple[float, int]]:
                             amount_str = word.replace('$', '').replace(',', '')
                             try:
                                 amount = float(amount_str)
-                                if player not in player_money:
-                                    player_money[player] = 0.0
                                 player_money[player] -= amount  # Money in is negative
                                 break
                             except ValueError:
@@ -271,8 +270,6 @@ def calculate_bb100(hand: str) -> Dict[str, Tuple[float, int]]:
                 amount = float(match.group(2))
                 # Verify this is a known player
                 if player_name in known_players:
-                    if player_name not in player_money:
-                        player_money[player_name] = 0.0
                     player_money[player_name] += amount  # Money won is positive
 
         # Track uncalled bets returned
@@ -286,8 +283,6 @@ def calculate_bb100(hand: str) -> Dict[str, Tuple[float, int]]:
                 # Check which known player matches
                 for known_player in known_players:
                     if player_part == known_player or player_part.startswith(known_player):
-                        if known_player not in player_money:
-                            player_money[known_player] = 0.0
                         player_money[known_player] += amount  # Money returned is positive
                         break
 
@@ -295,5 +290,87 @@ def calculate_bb100(hand: str) -> Dict[str, Tuple[float, int]]:
     for player, net_money in player_money.items():
         bb_won = net_money / bb_amount
         result[player] = (bb_won, 1)
+
+    return result
+
+
+def calculate_3bet(hand: str) -> Dict[str, Tuple[int, int]]:
+    """
+    Calculate 3-bet frequency for all players in a hand.
+
+    3-bet Definition:
+    - raise_count = 0: No raises yet (just blinds posted)
+    - raise_count = 1: Someone has open-raised (the "2-bet")
+    - raise_count = 2: Someone has 3-bet (re-raised the opener)
+
+    When raise_count == 1 (facing an open):
+    - If player raises: they 3-bet (numerator +1)
+    - If player calls/folds: they had opportunity but didn't 3-bet (denominator only +1)
+
+    This design allows future extension to 4-bet, 5-bet, fold-to-3bet, etc.
+
+    Args:
+        hand: String content of a single hand
+
+    Returns:
+        Dictionary mapping player names to (numerator, denominator) tuples
+        Example: {"player1": (1, 2), "player2": (0, 3)}
+    """
+    known_players = get_players_in_hand(hand)
+    result = {}
+    lines = hand.split('\n')
+
+    in_hole_cards = False
+    raise_count = 0
+
+    for line in lines:
+        line = line.strip()
+
+        if line.startswith('*** HOLE CARDS ***'):
+            in_hole_cards = True
+            continue
+
+        if line.startswith('*** FLOP ***') or line.startswith('*** SUMMARY ***'):
+            # Stop at flop - 3-bet is pre-flop only
+            break
+
+        if in_hole_cards:
+            # Skip non-action lines
+            if not line or line.startswith('Dealt to') or line.startswith('Main pot') or line.startswith('Uncalled'):
+                continue
+
+            # Extract player name
+            player = extract_player_from_action(line, known_players)
+            if not player:
+                continue
+
+            # Extract action
+            action_part = line[len(player):].strip()
+            words = action_part.split()
+            if len(words) < 1:
+                continue
+
+            action = words[0]
+
+            # Skip blind posts (not voluntary raises)
+            if action == 'posts':
+                continue
+
+            # Process raises
+            if action == 'raises':
+                if raise_count == 1:
+                    # This is a 3-bet!
+                    result[player] = (1, 1)
+                    raise_count = 2
+                else:
+                    # This is an open raise (or 4-bet, 5-bet, etc.)
+                    raise_count += 1
+
+            # Process other actions (calls, folds, checks)
+            elif action in ('calls', 'folds', 'checks'):
+                if raise_count == 1:
+                    # Facing an open raise - this is a 3-bet opportunity
+                    if player not in result:
+                        result[player] = (0, 1)
 
     return result

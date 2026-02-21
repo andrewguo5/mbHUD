@@ -10,5 +10,6 @@ class Stat(Enum):
 
     VPIP = "VPIP"      # Voluntarily Put money In Pot
     PFR = "PFR"        # Pre-Flop Raise
+    THREE_B = "3B"     # 3-bet frequency
     BB100 = "BB100"    # Big blinds won per 100 hands
     N = "N"            # Number of hands seen

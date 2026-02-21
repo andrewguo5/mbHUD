@@ -51,6 +51,7 @@ def get_players_in_hand(hand: str) -> List[str]:
         List of player names who are active in this hand
     """
     players = []
+    sitting_out = []
     lines = hand.split('\n')
 
     # Only look at lines before HOLE CARDS section to get the seat assignments
@@ -71,6 +72,17 @@ def get_players_in_hand(hand: str) -> List[str]:
             if match:
                 player_name = match.group(1)
                 players.append(player_name)
+
+        # Also check for "player sits out" lines (appear after seat assignments)
+        # Format: "fish223 sits out"
+        if ' sits out' in line:
+            # Extract player name (everything before " sits out")
+            player_sitting = line.split(' sits out')[0].strip()
+            if player_sitting:
+                sitting_out.append(player_sitting)
+
+    # Remove sitting out players from active list
+    players = [p for p in players if p not in sitting_out]
 
     return players
 
