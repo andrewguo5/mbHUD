@@ -60,21 +60,57 @@ def get_players_in_hand(hand: str) -> List[str]:
             break
 
         # Player seats look like: "Seat 1: Kolunio5 ($5.27)"
+        # Or with spaces in name: "Seat 3: Pointe After ($5.00)"
         # Skip those sitting out: "Seat 2: Kiman11 ($7.74) is sitting out"
-        # May have conditions: "Seat 3: Specks4016 will be allowed to play after the button"
+        # Skip special conditions: "Seat 3: Specks4016 will be allowed to play after the button"
         if line.startswith('Seat ') and 'is sitting out' not in line:
-            # Extract player name between "Seat N: " and first space or " ($"
-            try:
-                parts = line.split(': ', 1)
-                if len(parts) == 2:
-                    name_and_rest = parts[1]
-                    # Player name is the first word (no spaces in player names)
-                    player_name = name_and_rest.split()[0]
-                    players.append(player_name)
-            except (IndexError, ValueError):
-                continue
+            # Extract player name using regex: everything between ": " and " ($"
+            # Pattern: Seat N: <player_name> ($X.XX)
+            # The player name can contain spaces (e.g., "Pointe After")
+            match = re.match(r'Seat \d+: (.+?) \(\$[\d.]+\)', line)
+            if match:
+                player_name = match.group(1)
+                players.append(player_name)
 
     return players
+
+
+def extract_player_from_action(line: str, known_players: List[str]) -> Optional[str]:
+    """
+    Extract player name from an action line, using known player list for matching.
+
+    Uses a greedy/longest-match strategy to handle player names with spaces.
+    For example, if known_players contains "Pointe After" and the line starts with
+    "Pointe After raises", we'll match "Pointe After" not just "Pointe".
+
+    Args:
+        line: Action line like "Pointe After raises $0.30 to $0.30"
+        known_players: List of player names from get_players_in_hand()
+
+    Returns:
+        Matched player name, or None if no match found
+
+    Example:
+        >>> known = ["aampersands", "Pointe After", "Fise"]
+        >>> extract_player_from_action("Pointe After raises $0.30", known)
+        "Pointe After"
+        >>> extract_player_from_action("Fise folds", known)
+        "Fise"
+    """
+    line = line.strip()
+
+    # Try to match each known player, preferring longer names first
+    # This ensures "Pointe After" matches before "Pointe" would
+    sorted_players = sorted(known_players, key=len, reverse=True)
+
+    for player in sorted_players:
+        if line.startswith(player + ' '):
+            return player
+        # Also handle case where player name is the entire line (edge case)
+        if line == player:
+            return player
+
+    return None
 
 
 def extract_hand_id(hand: str) -> Optional[str]:

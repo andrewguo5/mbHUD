@@ -52,7 +52,7 @@ def main():
     print("Cache cleared successfully!")
     print()
     print("Next steps:")
-    print("  Run 'python3 mbhud_flush.py' to rebuild cache")
+    print("  Run 'mbhud flush' to rebuild cache")
     print()
 
 

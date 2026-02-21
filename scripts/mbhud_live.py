@@ -64,7 +64,7 @@ def display_hud(tracker: LiveStatsTracker, last_flush_time: float):
     if not live_files:
         print("No active tables detected.")
         print("\nWaiting for you to join a table...")
-        print("(Hand history file must be modified after last flush)")
+        print("Join a table and finish at least one hand first to see stats.")
         print("\nPress Ctrl+C to quit")
         return
 

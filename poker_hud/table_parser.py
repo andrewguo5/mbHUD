@@ -93,21 +93,26 @@ def parse_table_state(hand: str, hero: str) -> Optional[TableState]:
             break
 
         # Match seat lines
-        # Pattern: "Seat N: PlayerName ..."
-        seat_match = re.match(r'Seat (\d+):\s+(\S+)', line)
-        if seat_match:
-            seat_num = int(seat_match.group(1))
-            player_name = seat_match.group(2)
+        # Pattern: "Seat N: PlayerName ($X.XX)" or "Seat N: Player Name ($X.XX)"
+        # Use same robust pattern as hand_parser.get_players_in_hand()
+        if line.startswith('Seat ') and 'is sitting out' not in line:
+            # Extract player name: everything between ": " and " ($"
+            seat_match = re.match(r'Seat (\d+): (.+?) \(\$[\d.]+\)', line)
+            if seat_match:
+                seat_num = int(seat_match.group(1))
+                player_name = seat_match.group(2)
 
-            # Skip sitting out players (they're not really at the table)
-            if 'is sitting out' in line:
-                seats[seat_num] = None
-            else:
                 seats[seat_num] = player_name
 
                 # Check if this is the hero
                 if player_name == hero:
                     hero_seat = seat_num
+        elif line.startswith('Seat ') and 'is sitting out' in line:
+            # Handle sitting out players
+            seat_match = re.match(r'Seat (\d+):', line)
+            if seat_match:
+                seat_num = int(seat_match.group(1))
+                seats[seat_num] = None
 
     # Make sure we found the hero
     if hero_seat is None:

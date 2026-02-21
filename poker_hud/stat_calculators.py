@@ -8,6 +8,7 @@ player names to (numerator, denominator) tuples.
 import re
 from typing import Dict, Tuple
 from .stats import Stat
+from .hand_parser import get_players_in_hand, extract_player_from_action
 
 
 def calculate_vpip(hand: str) -> Dict[str, Tuple[int, int]]:
@@ -29,6 +30,9 @@ def calculate_vpip(hand: str) -> Dict[str, Tuple[int, int]]:
     """
     result = {}
     lines = hand.split('\n')
+
+    # First, get the known player list from the hand roster
+    known_players = get_players_in_hand(hand)
 
     # Find the HOLE CARDS section and process actions
     in_hole_cards = False
@@ -52,37 +56,45 @@ def calculate_vpip(hand: str) -> Dict[str, Tuple[int, int]]:
             # "aampersands calls $0.05"
             # "dreamwrecker checks"
             # "Fise posts the small blind $0.05"
+            # "Pointe After raises $0.30 to $0.30"
 
             # Skip lines that aren't actions
             if not line or line.startswith('Dealt to') or line.startswith('Main pot') or line.startswith('Uncalled'):
                 continue
 
-            # Extract player name (first word) and action
-            words = line.split()
-            if len(words) >= 2:
-                player = words[0]
-                action = words[1]
+            # Extract player name using known player list
+            player = extract_player_from_action(line, known_players)
+            if not player:
+                continue
 
-                # Only count recognized actions
-                # Recognized actions: raises, calls, folds, checks, bets
-                recognized_actions = {'raises', 'calls', 'folds', 'checks', 'bets'}
+            # Extract action (word immediately after player name)
+            action_part = line[len(player):].strip()
+            words = action_part.split()
+            if len(words) < 1:
+                continue
 
-                if action not in recognized_actions:
-                    continue
+            action = words[0]
 
-                # Only track if this is the first action for this player
-                if player not in player_actions:
-                    # Determine if they voluntarily put money in
-                    if action in ('raises', 'calls'):
-                        player_actions[player] = 'VPIP'
-                        result[player] = (1, 1)
-                    elif action in ('folds', 'checks'):
-                        player_actions[player] = 'NO_VPIP'
-                        result[player] = (0, 1)
-                    # Note: bets should not appear pre-flop, but if they do, count as VPIP
-                    elif action == 'bets':
-                        player_actions[player] = 'VPIP'
-                        result[player] = (1, 1)
+            # Only count recognized actions
+            # Recognized actions: raises, calls, folds, checks, bets
+            recognized_actions = {'raises', 'calls', 'folds', 'checks', 'bets'}
+
+            if action not in recognized_actions:
+                continue
+
+            # Only track if this is the first action for this player
+            if player not in player_actions:
+                # Determine if they voluntarily put money in
+                if action in ('raises', 'calls'):
+                    player_actions[player] = 'VPIP'
+                    result[player] = (1, 1)
+                elif action in ('folds', 'checks'):
+                    player_actions[player] = 'NO_VPIP'
+                    result[player] = (0, 1)
+                # Note: bets should not appear pre-flop, but if they do, count as VPIP
+                elif action == 'bets':
+                    player_actions[player] = 'VPIP'
+                    result[player] = (1, 1)
 
     return result
 
@@ -107,6 +119,9 @@ def calculate_pfr(hand: str) -> Dict[str, Tuple[int, int]]:
     result = {}
     lines = hand.split('\n')
 
+    # First, get the known player list from the hand roster
+    known_players = get_players_in_hand(hand)
+
     # Find the HOLE CARDS section and count raises + opportunities
     in_hole_cards = False
     player_raises = {}  # Track number of raises per player
@@ -128,29 +143,36 @@ def calculate_pfr(hand: str) -> Dict[str, Tuple[int, int]]:
             if not line or line.startswith('Dealt to') or line.startswith('Main pot') or line.startswith('Uncalled'):
                 continue
 
-            # Extract player name (first word) and action
-            words = line.split()
-            if len(words) >= 2:
-                player = words[0]
-                action = words[1]
+            # Extract player name using known player list
+            player = extract_player_from_action(line, known_players)
+            if not player:
+                continue
 
-                # Only count recognized actions as opportunities
-                # Recognized actions: raises, calls, folds, checks, bets
-                # Skip: posts (not voluntary), does (descriptive), collected, etc.
-                recognized_actions = {'raises', 'calls', 'folds', 'checks', 'bets'}
+            # Extract action (word immediately after player name)
+            action_part = line[len(player):].strip()
+            words = action_part.split()
+            if len(words) < 1:
+                continue
 
-                if action not in recognized_actions:
-                    continue
+            action = words[0]
 
-                # Count this as an opportunity for the player
-                if player not in player_opportunities:
-                    player_opportunities[player] = 0
-                    player_raises[player] = 0
-                player_opportunities[player] += 1
+            # Only count recognized actions as opportunities
+            # Recognized actions: raises, calls, folds, checks, bets
+            # Skip: posts (not voluntary), does (descriptive), collected, etc.
+            recognized_actions = {'raises', 'calls', 'folds', 'checks', 'bets'}
 
-                # Check if this is a raise
-                if action == 'raises':
-                    player_raises[player] += 1
+            if action not in recognized_actions:
+                continue
+
+            # Count this as an opportunity for the player
+            if player not in player_opportunities:
+                player_opportunities[player] = 0
+                player_raises[player] = 0
+            player_opportunities[player] += 1
+
+            # Check if this is a raise
+            if action == 'raises':
+                player_raises[player] += 1
 
     # Build result from tracked data
     for player in player_opportunities:
@@ -196,6 +218,9 @@ def calculate_bb100(hand: str) -> Dict[str, Tuple[float, int]]:
         # Can't calculate without BB amount
         return {}
 
+    # First, get the known player list from the hand roster
+    known_players = get_players_in_hand(hand)
+
     result = {}
     player_money = {}  # Track net money for each player
 
@@ -206,50 +231,65 @@ def calculate_bb100(hand: str) -> Dict[str, Tuple[float, int]]:
         # Track money going in (posts, calls, raises, bets)
         # Format examples:
         #   "player posts the small blind $0.05"
-        #   "player calls $0.30"
+        #   "Pointe After calls $0.30"
         #   "player bets $0.71"
         #   "player raises $0.65 to $0.70" - first $ is additional amount put in
-        words = line.split()
-        if len(words) >= 3:
-            player = words[0]
-            action = words[1]
 
-            # Actions that put money in - extract first dollar amount
-            if action in ('posts', 'calls', 'bets', 'raises'):
-                # Extract dollar amount (first $ after action)
-                for word in words[2:]:
-                    if word.startswith('$'):
-                        amount_str = word.replace('$', '').replace(',', '')
-                        try:
-                            amount = float(amount_str)
-                            if player not in player_money:
-                                player_money[player] = 0.0
-                            player_money[player] -= amount  # Money in is negative
-                            break
-                        except ValueError:
-                            pass
+        # Extract player name using known player list
+        player = extract_player_from_action(line, known_players)
+        if player:
+            # Extract action (word immediately after player name)
+            action_part = line[len(player):].strip()
+            words = action_part.split()
+            if len(words) >= 2:
+                action = words[0]
+
+                # Actions that put money in - extract first dollar amount
+                if action in ('posts', 'calls', 'bets', 'raises'):
+                    # Extract dollar amount (first $ after action)
+                    for word in words[1:]:
+                        if word.startswith('$'):
+                            amount_str = word.replace('$', '').replace(',', '')
+                            try:
+                                amount = float(amount_str)
+                                if player not in player_money:
+                                    player_money[player] = 0.0
+                                player_money[player] -= amount  # Money in is negative
+                                break
+                            except ValueError:
+                                pass
 
         # Track money won (in SUMMARY section)
         # Format: "Seat N: player ... won $amount"
+        # Need to handle multi-word names: "Seat 3: Pointe After ... won $1.23"
         if 'won $' in line:
-            match = re.search(r'Seat \d+: (\w+).*won \$([\d.]+)', line)
+            # Use regex to extract player name and amount
+            # Pattern: Seat N: <player_name> ... won $<amount>
+            match = re.search(r'Seat \d+: (.+?) .*won \$([\d.]+)', line)
             if match:
-                player = match.group(1)
+                player_name = match.group(1)
                 amount = float(match.group(2))
-                if player not in player_money:
-                    player_money[player] = 0.0
-                player_money[player] += amount  # Money won is positive
+                # Verify this is a known player
+                if player_name in known_players:
+                    if player_name not in player_money:
+                        player_money[player_name] = 0.0
+                    player_money[player_name] += amount  # Money won is positive
 
         # Track uncalled bets returned
         # Format: "Uncalled bet ($X) returned to player"
         if line.startswith('Uncalled bet'):
-            match = re.search(r'Uncalled bet \(\$([\d.]+)\) returned to (\w+)', line)
+            # Extract amount and player using known players
+            match = re.search(r'Uncalled bet \(\$([\d.]+)\) returned to (.+)', line)
             if match:
                 amount = float(match.group(1))
-                player = match.group(2)
-                if player not in player_money:
-                    player_money[player] = 0.0
-                player_money[player] += amount  # Money returned is positive
+                player_part = match.group(2).strip()
+                # Check which known player matches
+                for known_player in known_players:
+                    if player_part == known_player or player_part.startswith(known_player):
+                        if known_player not in player_money:
+                            player_money[known_player] = 0.0
+                        player_money[known_player] += amount  # Money returned is positive
+                        break
 
     # Convert to big blinds
     for player, net_money in player_money.items():

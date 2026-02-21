@@ -163,7 +163,7 @@ class LiveStatsTracker:
             >>> vpip_num, vpip_denom = stats.get(Stat.VPIP, (0, 0))
         """
         # Start with cached stats from all historical (non-live) files
-        all_files = find_hand_history_files(self.username)
+        all_files = find_hand_history_files()
         historical_files = [f for f in all_files if not is_live_file(f)]
 
         cached_stats: Dict[Stat, Tuple[float, int]] = {}

@@ -113,9 +113,9 @@ def main():
     print()
     print("Next steps:")
     print("  1. Start playing on ACR")
-    print("  2. Run: python3 mbhud_start.py")
+    print("  2. Run: mbhud start")
     print()
-    print("For help, see README.md")
+    print("For help, run: mbhud --help")
     print()
 
 
