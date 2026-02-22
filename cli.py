@@ -51,6 +51,13 @@ def stats():
 
 
 @cli.command()
+def detailed():
+    """Display detailed stats with position breakdown for hero"""
+    from scripts.detailed_stats import main
+    main()
+
+
+@cli.command()
 def clear_cache():
     """Clear all cached .agg files"""
     from scripts.mbhud_clear_cache import main

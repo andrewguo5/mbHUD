@@ -92,7 +92,13 @@ Finds any new hands and pre-processes them into aggregated files.
 ```bash
 mbhud stats
 ```
-Display stats. 
+Display overall stats across all sessions.
+
+**View detailed stats with position breakdown:**
+```bash
+mbhud detailed
+```
+Display your stats broken down by position (BTN, SB, BB, etc.) alongside aggregate stats.
 
 **Clear cache:**
 ```bash

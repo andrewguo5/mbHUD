@@ -2,7 +2,7 @@
 Aggregation functions for combining hand statistics.
 """
 
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Callable
 from .stats import Stat
 from .hand_structures import ParsedHand
 
@@ -174,5 +174,104 @@ def aggregate_session_v2(
             result[player][Stat.N] = (vpip_denom, vpip_denom)
         else:
             result[player][Stat.N] = (0, 0)
+
+    return result
+
+
+def aggregate_session_by_position(
+    parsed_hands: List[ParsedHand],
+    stat_calculators: Dict[Stat, Callable]
+) -> Dict[str, Dict[str, Dict[Stat, Tuple[float, int]]]]:
+    """
+    Aggregate statistics for a session with position bucketing.
+
+    Args:
+        parsed_hands: List of ParsedHand objects
+        stat_calculators: Dictionary mapping Stat -> v2 calculator function
+
+    Returns:
+        Dictionary mapping player -> position -> (Stat -> (numerator, denominator))
+
+        Example:
+        {
+            "alice": {
+                "BTN": {Stat.VPIP: (8, 10), Stat.PFR: (6, 10), Stat.N: (10, 10)},
+                "BB": {Stat.VPIP: (3, 12), Stat.PFR: (1, 12), Stat.N: (12, 12)},
+                "ALL": {Stat.VPIP: (11, 22), Stat.PFR: (7, 22), Stat.N: (22, 22)}
+            }
+        }
+    """
+    # Structure: player -> position -> stat -> list of (num, denom) from each hand
+    position_buckets: Dict[str, Dict[str, Dict[Stat, List[Tuple[float, int]]]]] = {}
+
+    for parsed_hand in parsed_hands:
+        # Calculate stats for this hand
+        hand_stats = {}
+        for stat, calculator in stat_calculators.items():
+            hand_stats[stat] = calculator(parsed_hand)
+
+        # Bucket by position
+        for player in parsed_hand.metadata.positions.keys():
+            position = parsed_hand.metadata.positions[player]
+
+            # Initialize player if needed
+            if player not in position_buckets:
+                position_buckets[player] = {}
+
+            # Initialize position bucket if needed
+            if position not in position_buckets[player]:
+                position_buckets[player][position] = {}
+
+            # Add stats for this hand to this player's position bucket
+            for stat, hand_result in hand_stats.items():
+                if player in hand_result:
+                    if stat not in position_buckets[player][position]:
+                        position_buckets[player][position][stat] = []
+
+                    position_buckets[player][position][stat].append(hand_result[player])
+
+    # Aggregate the lists into totals
+    result: Dict[str, Dict[str, Dict[Stat, Tuple[float, int]]]] = {}
+
+    for player, positions in position_buckets.items():
+        result[player] = {}
+
+        # Aggregate each position bucket
+        for position, stats in positions.items():
+            result[player][position] = {}
+
+            for stat, values in stats.items():
+                total_num = sum(num for num, _ in values)
+                total_denom = sum(denom for _, denom in values)
+                result[player][position][stat] = (total_num, total_denom)
+
+            # Add N (number of hands) for this position
+            if Stat.VPIP in result[player][position]:
+                _, vpip_denom = result[player][position][Stat.VPIP]
+                result[player][position][Stat.N] = (vpip_denom, vpip_denom)
+            else:
+                result[player][position][Stat.N] = (0, 0)
+
+        # Add "ALL" position that aggregates across all positions
+        result[player]["ALL"] = {}
+        all_stats: Dict[Stat, List[Tuple[float, int]]] = {}
+
+        for position, stats in positions.items():
+            for stat, values in stats.items():
+                if stat not in all_stats:
+                    all_stats[stat] = []
+                all_stats[stat].extend(values)
+
+        for stat, values in all_stats.items():
+            total_num = sum(num for num, _ in values)
+            total_denom = sum(denom for _, denom in values)
+            result[player]["ALL"][stat] = (total_num, total_denom)
+
+        # Add N for "ALL"
+        if Stat.VPIP in result[player]["ALL"]:
+            _, vpip_denom = result[player]["ALL"][Stat.VPIP]
+            result[player]["ALL"][Stat.N] = (vpip_denom, vpip_denom)
+        else:
+            result[player]["ALL"][Stat.N] = (0, 0)
 
     return result
