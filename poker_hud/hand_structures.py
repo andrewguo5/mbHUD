@@ -5,9 +5,54 @@ Provides a complete, serializable representation of poker hands that can be
 stored and retrieved from a hand history database.
 """
 
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from typing import Dict, List, Optional
 import json
+
+
+def calculate_position(seat_num: int, button_seat: int, max_seats: int) -> str:
+    """
+    Calculate position relative to button.
+
+    Position naming:
+    - BTN: Button
+    - SB: Small blind (1 seat after button)
+    - BB: Big blind (2 seats after button)
+    - BTN-N: N seats before button (e.g., BTN-1 = cutoff, BTN-2 = hijack in 6-max)
+
+    Args:
+        seat_num: Player's seat number
+        button_seat: Button seat number
+        max_seats: Maximum seats at table
+
+    Returns:
+        Position string (e.g., "BTN", "SB", "BB", "BTN-3")
+
+    Examples:
+        >>> calculate_position(4, 4, 6)  # Button
+        'BTN'
+        >>> calculate_position(5, 4, 6)  # Small blind
+        'SB'
+        >>> calculate_position(6, 4, 6)  # Big blind
+        'BB'
+        >>> calculate_position(3, 4, 6)  # Cutoff (1 before button)
+        'BTN-1'
+        >>> calculate_position(1, 4, 6)  # UTG in 6-max (3 before button)
+        'BTN-3'
+    """
+    # Calculate distance from button (clockwise)
+    distance = (seat_num - button_seat) % max_seats
+
+    if distance == 0:
+        return "BTN"
+    elif distance == 1:
+        return "SB"
+    elif distance == 2:
+        return "BB"
+    else:
+        # Seats before the button (counting backwards)
+        seats_before_btn = max_seats - distance
+        return f"BTN-{seats_before_btn}"
 
 
 @dataclass
@@ -22,6 +67,14 @@ class HandMetadata:
     big_blind: float
     players: Dict[int, str]  # seat_number -> player_name
     stacks: Dict[str, float]  # player_name -> starting_stack
+    positions: Dict[str, str] = field(default_factory=dict)  # player_name -> position (BTN, SB, BB, BTN-N)
+
+    def calculate_positions(self) -> None:
+        """Calculate and populate positions for all players."""
+        self.positions = {}
+        for seat_num, player_name in self.players.items():
+            position = calculate_position(seat_num, self.button_seat, self.max_seats)
+            self.positions[player_name] = position
 
 
 @dataclass

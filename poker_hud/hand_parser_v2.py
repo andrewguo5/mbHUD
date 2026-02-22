@@ -28,6 +28,9 @@ def parse_hand(hand: str) -> Optional[ParsedHand]:
     if not metadata:
         return None
 
+    # Calculate positions for all players
+    metadata.calculate_positions()
+
     # Parse streets (preflop, flop, turn, river)
     streets = _parse_streets(hand, metadata.players)
 
