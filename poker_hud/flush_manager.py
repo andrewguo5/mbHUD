@@ -70,7 +70,10 @@ def flush_all(verbose: bool = True) -> dict:
     """
     Flush all hand history files to .agg cache files.
 
-    This processes all hand history files in the hand history directory.
+    Pipeline:
+    1. Backup (rsync) hand histories from ACR directory to data/handhistory
+    2. Process files in data/handhistory and create .agg files
+
     For each file:
     - If .agg exists: skip (already processed)
     - If .agg missing: process the file and create .agg
@@ -94,7 +97,21 @@ def flush_all(verbose: bool = True) -> dict:
     """
     from .hand_parser import split_into_hands
 
-    # Find all hand history files
+    # Step 1: Backup hand histories from ACR to data/handhistory
+    print("Step 1: Backing up hand histories from ACR directory...")
+    print("─" * 80)
+    try:
+        from scripts.backup_handhistory import backup_handhistory
+        backup_handhistory()
+    except Exception as e:
+        print(f"Warning: Backup failed: {e}")
+        print("Continuing with existing files in data/handhistory...")
+
+    print()
+    print("Step 2: Processing hand history files...")
+    print("─" * 80)
+
+    # Step 2: Find all hand history files (now from backup directory)
     files = find_hand_history_files()
 
     total_files = len(files)

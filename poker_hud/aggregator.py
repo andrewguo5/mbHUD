@@ -4,6 +4,7 @@ Aggregation functions for combining hand statistics.
 
 from typing import Dict, List, Tuple
 from .stats import Stat
+from .hand_structures import ParsedHand
 
 
 def aggregate_hand_results(
@@ -111,6 +112,63 @@ def aggregate_session(
                 result[player][stat] = (0, 0)
 
         # Add N (number of hands) - sum of denominators for VPIP (most inclusive stat)
+        if Stat.VPIP in result[player]:
+            _, vpip_denom = result[player][Stat.VPIP]
+            result[player][Stat.N] = (vpip_denom, vpip_denom)
+        else:
+            result[player][Stat.N] = (0, 0)
+
+    return result
+
+
+def aggregate_session_v2(
+    parsed_hands: List[ParsedHand],
+    stat_calculators: Dict[Stat, callable]
+) -> Dict[str, Dict[Stat, Tuple[int, int]]]:
+    """
+    Aggregate statistics for a session using ParsedHand objects.
+
+    Currently returns position-collapsed stats for backward compatibility.
+    In the future, this will return position-bucketed stats.
+
+    Args:
+        parsed_hands: List of ParsedHand objects
+        stat_calculators: Dictionary mapping Stat -> v2 calculator function
+
+    Returns:
+        Dictionary mapping player -> (Stat -> (numerator, denominator))
+        Same format as aggregate_session() for backward compatibility
+    """
+    # Calculate per-hand results for each stat
+    per_stat_results = {}
+    for stat, calculator in stat_calculators.items():
+        hand_results = []
+        for parsed_hand in parsed_hands:
+            hand_result = calculator(parsed_hand)
+            hand_results.append(hand_result)
+
+        # Aggregate across all hands for this stat
+        per_stat_results[stat] = aggregate_hand_results(hand_results, stat)
+
+    # Reorganize: player -> (Stat -> (num, denom))
+    result = {}
+
+    # Get all unique players across all stats
+    all_players = set()
+    for stat_result in per_stat_results.values():
+        all_players.update(stat_result.keys())
+
+    for player in all_players:
+        result[player] = {}
+
+        for stat, stat_result in per_stat_results.items():
+            if player in stat_result:
+                result[player][stat] = stat_result[player]
+            else:
+                # Player didn't have this stat (no opportunities)
+                result[player][stat] = (0, 0)
+
+        # Add N (number of hands) - sum of denominators for VPIP
         if Stat.VPIP in result[player]:
             _, vpip_denom = result[player][Stat.VPIP]
             result[player][Stat.N] = (vpip_denom, vpip_denom)

@@ -12,9 +12,11 @@ PROJECT_ROOT = Path(__file__).parent.parent
 CONFIG_FILE = PROJECT_ROOT / "config.json"
 DATA_DIR = PROJECT_ROOT / "data"
 AGG_FILES_DIR = DATA_DIR / "agg_files"
+BACKUP_HANDHISTORY_DIR = DATA_DIR / "handhistory"
 
 # Ensure directories exist
 AGG_FILES_DIR.mkdir(parents=True, exist_ok=True)
+BACKUP_HANDHISTORY_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def load_config():
@@ -44,7 +46,7 @@ def get_username():
 
 
 def get_hand_history_dir():
-    """Get the hand history directory from config."""
+    """Get the ACR hand history directory from config."""
     config = load_config()
     hh_dir = config.get('hand_history_dir')
 
@@ -60,10 +62,12 @@ def get_hand_history_dir():
 # Load configuration on module import
 try:
     USERNAME = get_username()
-    HAND_HISTORY_DIR = get_hand_history_dir()
+    ACR_HAND_HISTORY_DIR = get_hand_history_dir()  # ACR's download directory (for live view)
+    HAND_HISTORY_DIR = BACKUP_HANDHISTORY_DIR  # Default to backup directory (for processing)
 except (FileNotFoundError, ValueError) as e:
     # Allow import to succeed but config will be None
     # Scripts will fail with clear error message when they try to use it
     USERNAME = None
+    ACR_HAND_HISTORY_DIR = None
     HAND_HISTORY_DIR = None
     _config_error = str(e)

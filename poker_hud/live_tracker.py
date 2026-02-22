@@ -10,10 +10,10 @@ from typing import Dict, Set, Tuple, Optional
 import time
 
 from .stats import Stat
-from .file_manager import find_hand_history_files, read_hand_history_file
+from .file_manager import find_acr_hand_history_files, read_hand_history_file
 from .hand_parser import split_into_hands, extract_hand_id
-from .stat_calculators import calculate_vpip, calculate_pfr, calculate_bb100
-from .aggregator import aggregate_session
+from .hand_parser_v2 import parse_hand
+from .aggregator import aggregate_session_v2
 from .processor import DEFAULT_STAT_CALCULATORS
 from .flush_manager import get_last_flush_time, is_live_file
 from .agg_file import get_agg_file_path, read_agg_file, agg_file_exists
@@ -84,19 +84,29 @@ class LiveStatsTracker:
         content = read_hand_history_file(file_path)
         hands = split_into_hands(content)
 
-        # Filter to only new hands (not yet processed)
-        new_hands = []
-        for hand in hands:
-            hand_id = extract_hand_id(hand)
+        # Filter to only new hands (not yet processed) and parse them
+        new_hand_texts = []
+        for hand_text in hands:
+            hand_id = extract_hand_id(hand_text)
             if hand_id and hand_id not in self.processed_hand_ids:
-                new_hands.append(hand)
+                new_hand_texts.append(hand_text)
                 self.processed_hand_ids.add(hand_id)
 
-        if not new_hands:
+        if not new_hand_texts:
             return  # No new hands
 
+        # Parse new hands to ParsedHand objects
+        parsed_hands = []
+        for hand_text in new_hand_texts:
+            parsed = parse_hand(hand_text)
+            if parsed:
+                parsed_hands.append(parsed)
+
+        if not parsed_hands:
+            return  # Failed to parse any hands
+
         # Aggregate the new hands
-        new_stats = aggregate_session(new_hands, DEFAULT_STAT_CALCULATORS)
+        new_stats = aggregate_session_v2(parsed_hands, DEFAULT_STAT_CALCULATORS)
 
         # Merge into live_stats
         for player, stats in new_stats.items():
@@ -124,7 +134,7 @@ class LiveStatsTracker:
         self._check_flush_reset()
 
         # Find all hand history files
-        all_files = find_hand_history_files()
+        all_files = find_acr_hand_history_files()
 
         # Identify live files (modified after last flush)
         current_live_files = {f for f in all_files if is_live_file(f)}
@@ -163,7 +173,7 @@ class LiveStatsTracker:
             >>> vpip_num, vpip_denom = stats.get(Stat.VPIP, (0, 0))
         """
         # Start with cached stats from all historical (non-live) files
-        all_files = find_hand_history_files()
+        all_files = find_acr_hand_history_files()
         historical_files = [f for f in all_files if not is_live_file(f)]
 
         cached_stats: Dict[Stat, Tuple[float, int]] = {}

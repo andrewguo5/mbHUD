@@ -1,39 +1,58 @@
 """
-File management for ACR hand history files.
+File management for hand history files.
 
 This module provides functions to discover and read hand history files
-from the Americas Cardroom download directory.
+from the persistent backup directory (data/handhistory).
 """
 
 import os
 from pathlib import Path
 from typing import List
 
-from .config import HAND_HISTORY_DIR
+from .config import BACKUP_HANDHISTORY_DIR, ACR_HAND_HISTORY_DIR
 
 
 def get_hand_history_directory() -> Path:
     """
-    Get the path to the ACR hand history directory from config.
+    Get the path to the hand history backup directory.
 
     Returns:
-        Path to the hand history directory
+        Path to the backup hand history directory (data/handhistory)
 
     Raises:
         FileNotFoundError: If the directory doesn't exist
     """
-    if not HAND_HISTORY_DIR.exists():
+    if not BACKUP_HANDHISTORY_DIR.exists():
         raise FileNotFoundError(
-            f"Hand history directory not found: {HAND_HISTORY_DIR}\n"
-            f"Check config.json or run 'python3 mbhud_init.py' to reconfigure."
+            f"Backup hand history directory not found: {BACKUP_HANDHISTORY_DIR}\n"
+            f"Run 'mbhud backup' to copy files from ACR directory."
         )
 
-    return HAND_HISTORY_DIR
+    return BACKUP_HANDHISTORY_DIR
+
+
+def get_acr_hand_history_directory() -> Path:
+    """
+    Get the path to the ACR hand history directory (for live view).
+
+    Returns:
+        Path to the ACR hand history directory
+
+    Raises:
+        FileNotFoundError: If the directory doesn't exist
+    """
+    if not ACR_HAND_HISTORY_DIR.exists():
+        raise FileNotFoundError(
+            f"ACR hand history directory not found: {ACR_HAND_HISTORY_DIR}\n"
+            f"Check config.json or run 'mbhud init' to reconfigure."
+        )
+
+    return ACR_HAND_HISTORY_DIR
 
 
 def find_hand_history_files(pattern: str = "*.txt") -> List[Path]:
     """
-    Find all hand history files in the configured directory.
+    Find all hand history files in the backup directory.
 
     Args:
         pattern: File pattern to match (default: "*.txt")
@@ -46,6 +65,24 @@ def find_hand_history_files(pattern: str = "*.txt") -> List[Path]:
     """
     hh_dir = get_hand_history_directory()
     files = sorted(hh_dir.glob(pattern))
+    return files
+
+
+def find_acr_hand_history_files(pattern: str = "*.txt") -> List[Path]:
+    """
+    Find all hand history files in the ACR directory (for live view).
+
+    Args:
+        pattern: File pattern to match (default: "*.txt")
+
+    Returns:
+        List of Path objects for hand history files, sorted by name
+
+    Raises:
+        FileNotFoundError: If the directory doesn't exist
+    """
+    acr_dir = get_acr_hand_history_directory()
+    files = sorted(acr_dir.glob(pattern))
     return files
 
 

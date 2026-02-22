@@ -11,7 +11,7 @@ Usage:
 import time
 import os
 from poker_hud.config import USERNAME
-from poker_hud.file_manager import find_hand_history_files, read_hand_history_file
+from poker_hud.file_manager import find_acr_hand_history_files, read_hand_history_file
 from poker_hud.hand_parser import split_into_hands
 from poker_hud.table_parser import get_latest_table_state
 from poker_hud.live_tracker import LiveStatsTracker
@@ -31,11 +31,11 @@ def format_stat(num, denom, is_percentage=True):
 
     if is_percentage:
         pct = (num / denom) * 100
-        return f"{pct:5.1f}%"
+        return f"{pct:5.0f}"
     else:
         # For BB/100, calculate per 100 hands
         bb100 = (num / denom) * 100
-        return f"{bb100:+7.1f}"
+        return f"{bb100:+7.0f}"
 
 
 def display_hud(tracker: LiveStatsTracker, last_flush_time: float):
@@ -57,8 +57,8 @@ def display_hud(tracker: LiveStatsTracker, last_flush_time: float):
     print("=" * 120)
     print()
 
-    # Find all live files
-    all_files = find_hand_history_files()
+    # Find all live files from ACR directory (for real-time updates)
+    all_files = find_acr_hand_history_files()
     live_files = [f for f in all_files if is_live_file(f)]
 
     if not live_files:

@@ -8,8 +8,9 @@ from typing import Dict, Tuple, Optional
 from .stats import Stat
 from .file_manager import read_hand_history_file
 from .hand_parser import split_into_hands
+from .hand_parser_v2 import parse_hand
 from .stat_calculators import calculate_vpip, calculate_pfr, calculate_bb100, calculate_3bet
-from .aggregator import aggregate_session
+from .aggregator import aggregate_session_v2
 from .agg_file import agg_file_exists, write_agg_file, read_agg_file, get_agg_file_path
 
 
@@ -64,20 +65,32 @@ def process_session_file(
     if verbose:
         print(f"Processing {file_path.name}...")
     content = read_hand_history_file(file_path)
-    hands = split_into_hands(content)
+    hand_texts = split_into_hands(content)
 
-    if not hands:
+    if not hand_texts:
         if verbose:
             print(f"  Warning: No hands found in {file_path.name}")
         return {}
 
-    # Aggregate statistics
-    session_stats = aggregate_session(hands, stat_calculators)
+    # Parse hands to ParsedHand objects
+    parsed_hands = []
+    for hand_text in hand_texts:
+        parsed = parse_hand(hand_text)
+        if parsed:
+            parsed_hands.append(parsed)
+
+    if not parsed_hands:
+        if verbose:
+            print(f"  Warning: Failed to parse any hands in {file_path.name}")
+        return {}
+
+    # Aggregate statistics (position-aware)
+    session_stats = aggregate_session_v2(parsed_hands, stat_calculators)
 
     # Write to .txt.agg file
-    write_agg_file(file_path, session_stats, len(hands))
+    write_agg_file(file_path, session_stats, len(parsed_hands))
     if verbose:
-        print(f"  Processed {len(hands)} hands, wrote to {agg_file.name}")
+        print(f"  Processed {len(parsed_hands)} hands, wrote to {agg_file.name}")
 
     return session_stats
 
