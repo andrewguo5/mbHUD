@@ -16,18 +16,19 @@ from poker_hud.processor import DEFAULT_STAT_CALCULATORS
 from poker_hud.stats import Stat
 
 
-def format_stat(num: float, denom: int) -> str:
+def format_stat(num: float, denom: int, stat: Stat) -> str:
     """Format a stat as percentage with sample size."""
     if denom == 0:
         return "  -  (0)"
 
+    # Special handling for BB/100
+    if stat == Stat.BB100:
+        # BB/100 = (total_bb / hands) * 100
+        bb100 = (num / denom) * 100 if denom > 0 else 0
+        return f"{bb100:6.1f} ({denom})"
+
+    # Regular percentage stats
     percentage = 100 * num / denom
-
-    # Special handling for BB/100 (numerator is already in BB)
-    if isinstance(num, float) and num != int(num):
-        # This is BB/100 - don't convert to percentage
-        return f"{num:6.1f} ({denom})"
-
     return f"{percentage:5.1f}% ({denom})"
 
 
@@ -98,7 +99,7 @@ def display_detailed_stats(hero: str):
         return
 
     # Display each stat with position breakdown
-    stat_order = [Stat.VPIP, Stat.PFR, Stat.THREE_B, Stat.BB100]
+    stat_order = [Stat.VPIP, Stat.PFR, Stat.THREE_B, Stat.ATS, Stat.F3B, Stat.BB100]
 
     for stat in stat_order:
         print(f"{stat.value}")
@@ -107,7 +108,7 @@ def display_detailed_stats(hero: str):
         # Show aggregate first
         if "ALL" in hero_stats and stat in hero_stats["ALL"]:
             num, denom = hero_stats["ALL"][stat]
-            formatted = format_stat(num, denom)
+            formatted = format_stat(num, denom, stat)
             print(f"  {'ALL':8s}: {formatted}")
 
         # Show each position
@@ -115,7 +116,7 @@ def display_detailed_stats(hero: str):
             pos_stats = hero_stats[position]
             if stat in pos_stats:
                 num, denom = pos_stats[stat]
-                formatted = format_stat(num, denom)
+                formatted = format_stat(num, denom, stat)
                 print(f"  {position:8s}: {formatted}")
 
         print()

@@ -141,6 +141,109 @@ def calculate_3bet(parsed: ParsedHand) -> Dict[str, Tuple[int, int]]:
     return result
 
 
+def calculate_ats(parsed: ParsedHand) -> Dict[str, Tuple[int, int]]:
+    """
+    Calculate ATS (Attempt To Steal) from ParsedHand.
+
+    ATS Definition:
+    - Steal attempt = raise from CO/BTN/SB when action is folded to player
+    - Only counts if player is in late position (CO/BTN/SB in 6-max)
+    - Numerator: 1 if player raises when folded to, 0 otherwise
+    - Denominator: 1 if player had opportunity to steal (folded to in steal position)
+
+    Steal positions in 6-max:
+    - BTN (button)
+    - SB (small blind)
+    - BTN-1 (cutoff)
+
+    Args:
+        parsed: ParsedHand object
+
+    Returns:
+        Dictionary mapping player names to (numerator, denominator) tuples
+    """
+    result = {}
+
+    # Define steal positions for 6-max
+    # In future, could adjust based on table size
+    steal_positions = {"BTN", "SB", "BTN-1"}
+
+    # Track if action was folded to current player
+    folded_to_player = True
+
+    for action in parsed.preflop.actions:
+        # Skip blind/ante posts
+        if action.action_type in ('post_sb', 'post_bb', 'post_ante'):
+            continue
+
+        player = action.player
+        position = parsed.metadata.positions.get(player)
+
+        # Check if this player is in a steal position
+        if position in steal_positions:
+            # Only count as steal opportunity if action was folded to them
+            if folded_to_player and player not in result:
+                # This is a steal opportunity (action folded to player in steal position)
+                if action.action_type == 'raise':
+                    # Player attempted steal
+                    result[player] = (1, 1)
+                elif action.action_type in ('call', 'fold', 'check'):
+                    # Player had opportunity but didn't steal
+                    result[player] = (0, 1)
+
+        # Update folded_to_player: set to False if someone calls or raises
+        if action.action_type in ('call', 'raise'):
+            folded_to_player = False
+
+    return result
+
+
+def calculate_f3b(parsed: ParsedHand) -> Dict[str, Tuple[int, int]]:
+    """
+    Calculate F3B (Fold to 3-bet) from ParsedHand.
+
+    F3B Definition:
+    - Player open-raises, faces a 3-bet, then folds
+    - Numerator: 1 if player folds to 3-bet, 0 if they call/4-bet
+    - Denominator: 1 if player faced a 3-bet (had opportunity)
+
+    Args:
+        parsed: ParsedHand object
+
+    Returns:
+        Dictionary mapping player names to (numerator, denominator) tuples
+    """
+    result = {}
+    raise_count = 0
+    open_raiser = None  # Track who made the first raise
+
+    for action in parsed.preflop.actions:
+        # Skip blind/ante posts
+        if action.action_type in ('post_sb', 'post_bb', 'post_ante'):
+            continue
+
+        player = action.player
+
+        # Check if open raiser is acting after facing a 3-bet (raise_count == 2)
+        if raise_count == 2 and player == open_raiser:
+            # The open raiser is acting after facing a 3-bet
+            if action.action_type == 'fold':
+                # Folded to 3-bet
+                result[player] = (1, 1)
+            elif action.action_type in ('call', 'raise'):
+                # Called or 4-bet the 3-bet
+                result[player] = (0, 1)
+
+        # Track raises
+        if action.action_type == 'raise':
+            if raise_count == 0:
+                # This is the open raise - track who did it
+                open_raiser = player
+            raise_count += 1
+
+    return result
+
+
 def calculate_bb100(parsed: ParsedHand) -> Dict[str, Tuple[float, int]]:
     """
     Calculate BB/100 (big blinds won per 100 hands) from ParsedHand.

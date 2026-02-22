@@ -9,7 +9,7 @@ from .stats import Stat
 from .file_manager import read_hand_history_file
 from .hand_parser import split_into_hands
 from .hand_parser_v2 import parse_hand
-from .stat_calculators import calculate_vpip, calculate_pfr, calculate_bb100, calculate_3bet
+from .stat_calculators import calculate_vpip, calculate_pfr, calculate_bb100, calculate_3bet, calculate_ats, calculate_f3b
 from .aggregator import aggregate_session_v2
 from .agg_file import agg_file_exists, write_agg_file, read_agg_file, get_agg_file_path
 
@@ -19,6 +19,8 @@ DEFAULT_STAT_CALCULATORS = {
     Stat.VPIP: calculate_vpip,
     Stat.PFR: calculate_pfr,
     Stat.THREE_B: calculate_3bet,
+    Stat.ATS: calculate_ats,
+    Stat.F3B: calculate_f3b,
     Stat.BB100: calculate_bb100,
 }
 
