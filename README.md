@@ -42,13 +42,21 @@ Default hand history locations:
 - Mac: `~/Downloads/AmericasCardroom/handHistory/<username>/`
 - Windows: `C:\ACR Poker\handHistory\<username>`
 
+## How it Works
+
+The program makes a local copy of your ACR hand history folder and pre-processes it into aggregated files. Both of these files are stored in the /data/ directory. This pre-processing action is referred to as a "flush" by the program internals.
+
+You can run `mbhud start`, which will perform a flush and then start the live tracker, or you can manually run `mbhud flush` followed by `mbhud live` or `mbhud stats`. 
+
+To update the stats, run `mbhud flush` to process any new hands. When using the live tracker, you do not have to flush. It will watch the ACR hand history directory, detect any new hands, and update the stats automatically. Stats only update after a hand is finished, so there is always a 1-hand delay.
+
 ## Quick Start
 
 ### Start HUD (recommended):
 ```bash
 mbhud start
 ```
-Flushes cache then starts live HUD.
+Quick-start option. Run this after `mbhud init` and then you can start playing on ACR.
 
 ### View all commands:
 ```bash
@@ -61,11 +69,13 @@ mbhud --help
 ```bash
 mbhud init
 ```
+Run this once at the beginning or if you want to change your username or hand history directory location.
 
 **Start HUD (with auto-flush):**
 ```bash
 mbhud start
 ```
+Essentially just `mbhud flush` followed by `mbhud live`.
 
 **Start HUD (without flush):**
 ```bash
@@ -76,48 +86,25 @@ mbhud live
 ```bash
 mbhud flush
 ```
+Finds any new hands and pre-processes them into aggregated files.
 
 **View stats:**
 ```bash
 mbhud stats
 ```
+Display stats. 
 
 **Clear cache:**
 ```bash
 mbhud clear-cache
 ```
+Delete the aggregated file cache. Use for debugging or maintenance purposes if you know what you're doing.
 
 **Watch file updates (debug):**
 ```bash
 mbhud watch
 ```
-
-## How It Works
-
-### Live HUD
-
-Displays real-time stats for active tables.
-
-- Updates every 30 seconds
-- Shows players in clockwise order from your seat
-- Combines cached + live stats
-- Press `Ctrl+C` to stop
-
-### Flush
-
-Processes hand histories into cached `.agg` files.
-
-- Skips already-processed files (fast)
-- Only processes new/modified files
-- Run after sessions to cache hands
-
-### Stats Display
-
-Shows aggregate statistics across all sessions.
-
-- Reads from cached `.agg` files
-- Includes live hands after flush
-- Sorts players by hand count
+For debugger/dev use.
 
 ## Troubleshooting
 
