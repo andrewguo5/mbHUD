@@ -52,7 +52,7 @@ def main():
     )
 
     # Print header
-    print(f"{'Player':<25} {'Hands':>8}  {'VPIP %':>8} {'VPIP':>12}  {'PFR %':>8} {'PFR':>12}  {'BB/100':>10}")
+    print(f"{'Player':<25} {'Hands':>8}  {'VPIP %':>8} {'VPIP':>12}  {'PFR %':>8} {'PFR':>12}  {'3B %':>8} {'3B':>12}  {'BB/100':>10}")
     print("-" * 120)
 
     # Print each player
@@ -67,10 +67,14 @@ def main():
         pfr_pct = (pfr_num / pfr_denom * 100) if pfr_denom > 0 else 0
         pfr_str = f"{pfr_num}/{pfr_denom}"
 
+        threeb_num, threeb_denom = stats.get(Stat.THREE_B, (0, 0))
+        threeb_pct = (threeb_num / threeb_denom * 100) if threeb_denom > 0 else 0
+        threeb_str = f"{threeb_num}/{threeb_denom}"
+
         bb100_total, bb100_hands = stats.get(Stat.BB100, (0, 0))
         bb100 = (bb100_total / bb100_hands * 100) if bb100_hands > 0 else 0
 
-        print(f"{player:<25} {n_hands:>8}  {vpip_pct:>7.1f}% {vpip_str:>12}  {pfr_pct:>7.1f}% {pfr_str:>12}  {bb100:>9.1f}")
+        print(f"{player:<25} {n_hands:>8}  {vpip_pct:>7.1f}% {vpip_str:>12}  {pfr_pct:>7.1f}% {pfr_str:>12}  {threeb_pct:>7.1f}% {threeb_str:>12}  {bb100:>9.1f}")
 
     # Summary statistics
     print()

@@ -8,7 +8,7 @@ from typing import Dict, Tuple, Optional
 from .stats import Stat
 from .file_manager import read_hand_history_file
 from .hand_parser import split_into_hands
-from .stat_calculators import calculate_vpip, calculate_pfr, calculate_bb100
+from .stat_calculators import calculate_vpip, calculate_pfr, calculate_bb100, calculate_3bet
 from .aggregator import aggregate_session
 from .agg_file import agg_file_exists, write_agg_file, read_agg_file, get_agg_file_path
 
@@ -17,6 +17,7 @@ from .agg_file import agg_file_exists, write_agg_file, read_agg_file, get_agg_fi
 DEFAULT_STAT_CALCULATORS = {
     Stat.VPIP: calculate_vpip,
     Stat.PFR: calculate_pfr,
+    Stat.THREE_B: calculate_3bet,
     Stat.BB100: calculate_bb100,
 }
 

@@ -95,7 +95,7 @@ def display_hud(tracker: LiveStatsTracker, last_flush_time: float):
             print(f"{'─' * 120}")
 
             # Display column headers
-            print(f"{'Seat':<6} {'Player':<20} {'Hands':>8}  {'VPIP':>8}  {'PFR':>8}  {'BB/100':>8}")
+            print(f"{'Seat':<6} {'Player':<20} {'Hands':>8}  {'VPIP':>8}  {'PFR':>8}  {'3B':>8}  {'BB/100':>8}")
             print("─" * 120)
 
             # Get seats in clockwise order from hero
@@ -113,17 +113,19 @@ def display_hud(tracker: LiveStatsTracker, last_flush_time: float):
                     n_hands = stats.get(Stat.N, (0, 0))[0]
                     vpip_num, vpip_denom = stats.get(Stat.VPIP, (0, 0))
                     pfr_num, pfr_denom = stats.get(Stat.PFR, (0, 0))
+                    threeb_num, threeb_denom = stats.get(Stat.THREE_B, (0, 0))
                     bb100_total, bb100_hands = stats.get(Stat.BB100, (0, 0))
 
                     # Format stats
                     vpip_str = format_stat(vpip_num, vpip_denom, is_percentage=True)
                     pfr_str = format_stat(pfr_num, pfr_denom, is_percentage=True)
+                    threeb_str = format_stat(threeb_num, threeb_denom, is_percentage=True)
                     bb100_str = format_stat(bb100_total, bb100_hands, is_percentage=False)
 
                     # Mark hero with asterisk
                     display_name = f"{player_name} *" if player_name == USERNAME else player_name
 
-                    print(f"{seat_num:<6} {display_name:<20} {n_hands:>8}  {vpip_str:>8}  {pfr_str:>8}  {bb100_str:>8}")
+                    print(f"{seat_num:<6} {display_name:<20} {n_hands:>8}  {vpip_str:>8}  {pfr_str:>8}  {threeb_str:>8}  {bb100_str:>8}")
 
             print()
 
