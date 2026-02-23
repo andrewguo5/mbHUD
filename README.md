@@ -7,11 +7,10 @@ Real-time poker statistics tracker for ACR cash games.
 You will need Python installed.
 Get up and running in under a minute:
 
-**1. Download the latest release:**
+**1. Install from the latest release:**
 
-Visit [Releases](https://github.com/andrewguo5/mbHUD/releases/latest) and download the `.whl` file, then install it:
 ```bash
-pip3 install mbhud-0.1.1-py3-none-any.whl
+pip3 install https://github.com/andrewguo5/mbHUD/releases/download/v0.1.1/mbhud-0.1.1-py3-none-any.whl
 ```
 
 **2. Configure your settings:**
@@ -43,13 +42,11 @@ That's it! The HUD will now track your poker sessions in real-time.
 
 ### Option 1: Install from GitHub Release (Recommended)
 
-Download the `.whl` file from the [latest release](https://github.com/andrewguo5/mbHUD/releases/latest) and install it:
+Install directly from the [latest release](https://github.com/andrewguo5/mbHUD/releases/latest):
 
 ```bash
-pip3 install mbhud-*.whl
+pip3 install https://github.com/andrewguo5/mbHUD/releases/download/v0.1.1/mbhud-0.1.1-py3-none-any.whl
 ```
-
-The `*.whl` pattern will match whichever version you downloaded.
 
 ### Option 2: Install from Source (For Development)
 
