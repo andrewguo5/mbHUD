@@ -21,7 +21,10 @@ mbHUD is a poker HUD (Heads-Up Display) for online poker that displays real-time
 
 - **Hand History Files**: Raw `.txt` files downloaded from ACR
 - **Backup Files** (`.txt.bak`): Processed hand history files stored locally to track what's been processed
-- **Aggregate Files** (`.txt.agg`): Per-session statistics in format: `player -> (STAT -> (numerator, denominator))`
+- **Aggregate Files** (`.txt.agg`): Per-session statistics in v2 format: `player -> (STAT -> position -> (numerator, denominator))`
+  - Position-bucketed: BTN, SB, BB, BTN-1 (CO), BTN-2 (HJ), etc.
+  - "ALL" position contains aggregate across all positions
+  - v1 format (legacy): position-collapsed, automatically converted to v2 on read
 - **In-Memory View**: Real-time aggregate of all `.txt.agg` files for HUD display
 
 ### Core Data Structures
@@ -37,9 +40,11 @@ mbHUD is a poker HUD (Heads-Up Display) for online poker that displays real-time
 - Some stats use "opportunities" as denominator instead of total hands seen
 - Stats can be combined (e.g., VPIP+PFR calculated together for efficiency)
 
-**Player Stats**:
-- `player -> (STAT -> (numerator, denominator))`
+**Player Stats** (v2 format):
+- Storage: `player -> (STAT -> position -> (numerator, denominator))`
+- Stat-first ordering throughout the codebase (not position-first)
 - Display: `percentage = 100 * numerator / denominator`
+- Position labels: BTN (button), SB (small blind), BB (big blind), BTN-1 (cutoff/CO), BTN-2 (hijack/HJ), BTN-3 (UTG in 6-max), etc.
 
 ### Stat Definitions
 
@@ -53,6 +58,26 @@ mbHUD is a poker HUD (Heads-Up Display) for online poker that displays real-time
 - Denominator: Number of opportunities to raise (number of times player's name appears in actions before FLOP)
 - Only count hands where player had opportunity to act pre-flop
 
+**3B (3-Bet)**:
+- Numerator: Number of times the player 3-bets (re-raises) preflop
+- Denominator: Number of opportunities to 3-bet (times facing a raise preflop)
+
+**ATS (Attempt To Steal)**:
+- Numerator: Number of times the player raises from steal positions when folded to
+- Denominator: Number of opportunities (times in steal positions with action folded to player)
+- Steal positions: CO (BTN-1), BTN, SB
+- Only counts if no one has called or raised before player acts
+
+**F3B (Fold to 3-Bet)**:
+- Numerator: Number of times the player folds to a 3-bet after opening
+- Denominator: Number of opportunities (times facing a 3-bet after opening)
+- Only applies to the original raiser when facing a re-raise
+
+**BB/100**:
+- Numerator: Total big blinds won
+- Denominator: Number of hands played
+- Display: `(numerator / denominator) * 100`
+
 ## Processing Logic
 
 ### File Diff and Backup System
@@ -63,16 +88,20 @@ mbHUD is a poker HUD (Heads-Up Display) for online poker that displays real-time
 4. If diff exists: delete `.txt.bak` and re-process entire file
 5. After processing: write copy to `.txt.bak`
 
-### Stat Aggregation
+### Stat Aggregation (Position-Bucketed)
 
-1. Parse hand history file into list of HAND objects
-2. For each HAND:
+1. Parse hand history file into list of ParsedHand objects
+2. For each ParsedHand:
    - Read players (exclude sitting out)
-   - Initialize stats with `n -> 1` (hands seen)
-   - Run stat functions to get `player -> (STAT -> (num, denom))`
-3. Aggregate across all hands in file
-4. Write session aggregates to `.txt.agg` file
+   - Calculate table positions (BTN, SB, BB, BTN-1, etc.)
+   - Run stat calculators to get `player -> (STAT -> (num, denom))`
+3. Aggregate by position:
+   - Bucket stats by player position in each hand
+   - Create stat -> position -> (num, denom) structure
+   - Add "ALL" position with aggregate across all positions
+4. Write session aggregates to `.txt.agg` file (v2 format)
 5. Load all `.txt.agg` files into memory for HUD
+6. Support backward compatibility for v1 files (auto-convert to v2 on read)
 
 ## Hand History Format Notes
 
@@ -103,11 +132,19 @@ Dealt to aampersands [Qs 2s]
 - **Player identification**: Track unique player IDs across hands
 - **Sitting out players**: Exclude from stat calculations
 
-## Development Priorities
+## Completed Features
 
-1. Hand history parser (validate and split into hands)
-2. VPIP/PFR stat calculators as proof of concept
-3. File diff/backup system
-4. Aggregation system for `.txt.agg` files
-5. In-memory stats view
-6. HUD overlay display (macOS menu bar or screen overlay)
+1. ✅ Hand history parser (validate and split into hands)
+2. ✅ Comprehensive stat calculators (VPIP, PFR, 3B, ATS, F3B, BB/100)
+3. ✅ File diff/backup system
+4. ✅ Position-bucketed aggregation system for `.txt.agg` files (v2 format)
+5. ✅ In-memory stats view with pagination
+6. ✅ Live HUD tracker
+7. ✅ Detailed position breakdown display
+
+## Future Development
+
+1. HUD overlay display (macOS menu bar or screen overlay)
+2. Additional stats (WTSD, W$SD, Agg%, etc.)
+3. Tournament support
+4. Database backend (currently file-based)

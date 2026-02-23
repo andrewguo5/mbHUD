@@ -4,8 +4,11 @@ Real-time poker statistics tracker for ACR cash games.
 
 ## Features
 
-- Tracks useful stats (VPIP, PFR, 3B, BB100)
+- Tracks comprehensive stats (VPIP, PFR, 3B, ATS, F3B, BB100)
+- Position-aware stat tracking (BTN, SB, BB, CO, HJ, etc.)
 - Real-time display in command line
+- Paginated stats view for large player pools
+- Detailed position breakdown for your stats
 - Simple setup and configuration
 
 ## Installation
@@ -41,6 +44,17 @@ This will:
 Default hand history locations:
 - Mac: `~/Downloads/AmericasCardroom/handHistory/<username>/`
 - Windows: `C:\ACR Poker\handHistory\<username>`
+
+## Statistics Tracked
+
+- **VPIP** (Voluntarily Put money In Pot): How often a player puts money in the pot preflop
+- **PFR** (Pre-Flop Raise): How often a player raises preflop
+- **3B** (3-Bet): How often a player 3-bets when facing a raise
+- **ATS** (Attempt To Steal): How often a player raises from late position (CO/BTN/SB) when folded to
+- **F3B** (Fold to 3-Bet): How often a player folds after raising preflop and facing a 3-bet
+- **BB/100**: Big blinds won per 100 hands
+
+All stats are tracked both in aggregate and broken down by position (BTN, SB, BB, CO/BTN-1, HJ/BTN-2, etc.).
 
 ## How it Works
 
@@ -92,13 +106,18 @@ Finds any new hands and pre-processes them into aggregated files.
 ```bash
 mbhud stats
 ```
-Display overall stats across all sessions.
+Display overall stats across all sessions (paginated, 20 players per page).
+
+Use `--page` or `-p` to view additional pages:
+```bash
+mbhud stats --page 2
+```
 
 **View detailed stats with position breakdown:**
 ```bash
 mbhud detailed
 ```
-Display your stats broken down by position (BTN, SB, BB, etc.) alongside aggregate stats.
+Display your stats broken down by position (BTN, SB, BB, CO, HJ, etc.) alongside aggregate stats.
 
 **Clear cache:**
 ```bash

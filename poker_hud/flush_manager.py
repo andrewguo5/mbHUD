@@ -132,7 +132,9 @@ def flush_all(verbose: bool = True) -> dict:
             if session_stats:
                 from .stats import Stat
                 first_player = next(iter(session_stats.values()))
-                hands_in_file = first_player.get(Stat.N, (0, 0))[0]
+                # New format: player -> stat -> position -> (num, denom)
+                n_stat_positions = first_player.get(Stat.N, {})
+                hands_in_file = n_stat_positions.get("ALL", (0, 0))[0]
                 total_hands += hands_in_file
 
                 print(f"  [{i}/{total_files}] {file_path.name[:16]}..: Processed {hands_in_file} hands")

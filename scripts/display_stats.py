@@ -33,7 +33,9 @@ def main(page=1):
         # Count hands from first player's N stat
         if stats:
             first_player = next(iter(stats.values()))
-            hands_in_session = first_player.get(Stat.N, (0, 0))[0]
+            # New format: player -> stat -> position -> (num, denom)
+            n_stat_positions = first_player.get(Stat.N, {})
+            hands_in_session = n_stat_positions.get("ALL", (0, 0))[0]
             total_hands += hands_in_session
 
     # Aggregate across all sessions

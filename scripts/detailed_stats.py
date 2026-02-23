@@ -78,20 +78,26 @@ def display_detailed_stats(hero: str):
     hero_stats = position_stats[hero]
 
     # Display overall hands first
-    if "ALL" in hero_stats:
-        all_stats = hero_stats["ALL"]
-        n_stat = all_stats.get(Stat.N, (0, 0))
-        print(f"Total Hands: {n_stat[0]}")
+    if Stat.N in hero_stats and "ALL" in hero_stats[Stat.N]:
+        n_hands = hero_stats[Stat.N]["ALL"][0]
+        print(f"Total Hands: {n_hands}")
         print()
 
     # Define position ordering for display (most common positions first)
     position_order = ["BTN", "SB", "BB", "BTN-1", "BTN-2", "BTN-3", "BTN-4", "BTN-5"]
 
     # Get positions that hero actually played (exclude "ALL")
-    positions_played = [pos for pos in position_order if pos in hero_stats and pos != "ALL"]
+    # Look at any stat to find all positions
+    all_positions = set()
+    for stat, position_data in hero_stats.items():
+        all_positions.update(position_data.keys())
+    all_positions.discard("ALL")  # Remove "ALL" from positions
+
+    # Order positions according to our preference
+    positions_played = [pos for pos in position_order if pos in all_positions]
 
     # Add any other positions not in our predefined list
-    other_positions = sorted([pos for pos in hero_stats.keys() if pos not in position_order and pos != "ALL"])
+    other_positions = sorted([pos for pos in all_positions if pos not in position_order])
     positions_played.extend(other_positions)
 
     if not positions_played:
@@ -105,17 +111,24 @@ def display_detailed_stats(hero: str):
         print(f"{stat.value}")
         print("-" * 80)
 
+        # Check if this stat exists for the hero
+        if stat not in hero_stats:
+            print(f"  No data for {stat.value}")
+            print()
+            continue
+
+        stat_positions = hero_stats[stat]
+
         # Show aggregate first
-        if "ALL" in hero_stats and stat in hero_stats["ALL"]:
-            num, denom = hero_stats["ALL"][stat]
+        if "ALL" in stat_positions:
+            num, denom = stat_positions["ALL"]
             formatted = format_stat(num, denom, stat)
             print(f"  {'ALL':8s}: {formatted}")
 
         # Show each position
         for position in positions_played:
-            pos_stats = hero_stats[position]
-            if stat in pos_stats:
-                num, denom = pos_stats[stat]
+            if position in stat_positions:
+                num, denom = stat_positions[position]
                 formatted = format_stat(num, denom, stat)
                 print(f"  {position:8s}: {formatted}")
 

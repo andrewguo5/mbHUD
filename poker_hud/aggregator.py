@@ -126,10 +126,10 @@ def aggregate_session_v2(
     stat_calculators: Dict[Stat, callable]
 ) -> Dict[str, Dict[Stat, Tuple[int, int]]]:
     """
-    Aggregate statistics for a session using ParsedHand objects.
+    Aggregate statistics for a session using ParsedHand objects (position-collapsed).
 
-    Currently returns position-collapsed stats for backward compatibility.
-    In the future, this will return position-bucketed stats.
+    This function returns position-collapsed stats for backward compatibility.
+    For position-bucketed stats, use aggregate_session_by_position() instead.
 
     Args:
         parsed_hands: List of ParsedHand objects
@@ -137,7 +137,7 @@ def aggregate_session_v2(
 
     Returns:
         Dictionary mapping player -> (Stat -> (numerator, denominator))
-        Same format as aggregate_session() for backward compatibility
+        Position-collapsed format for backward compatibility
     """
     # Calculate per-hand results for each stat
     per_stat_results = {}
@@ -181,7 +181,7 @@ def aggregate_session_v2(
 def aggregate_session_by_position(
     parsed_hands: List[ParsedHand],
     stat_calculators: Dict[Stat, Callable]
-) -> Dict[str, Dict[str, Dict[Stat, Tuple[float, int]]]]:
+) -> Dict[str, Dict[Stat, Dict[str, Tuple[float, int]]]]:
     """
     Aggregate statistics for a session with position bucketing.
 
@@ -190,14 +190,14 @@ def aggregate_session_by_position(
         stat_calculators: Dictionary mapping Stat -> v2 calculator function
 
     Returns:
-        Dictionary mapping player -> position -> (Stat -> (numerator, denominator))
+        Dictionary mapping player -> stat -> position -> (numerator, denominator)
 
         Example:
         {
             "alice": {
-                "BTN": {Stat.VPIP: (8, 10), Stat.PFR: (6, 10), Stat.N: (10, 10)},
-                "BB": {Stat.VPIP: (3, 12), Stat.PFR: (1, 12), Stat.N: (12, 12)},
-                "ALL": {Stat.VPIP: (11, 22), Stat.PFR: (7, 22), Stat.N: (22, 22)}
+                Stat.VPIP: {"ALL": (11, 22), "BTN": (8, 10), "BB": (3, 12)},
+                Stat.PFR: {"ALL": (7, 22), "BTN": (6, 10), "BB": (1, 12)},
+                Stat.N: {"ALL": (22, 22), "BTN": (10, 10), "BB": (12, 12)}
             }
         }
     """
@@ -231,47 +231,49 @@ def aggregate_session_by_position(
                     position_buckets[player][position][stat].append(hand_result[player])
 
     # Aggregate the lists into totals
-    result: Dict[str, Dict[str, Dict[Stat, Tuple[float, int]]]] = {}
+    # New structure: player -> stat -> position -> (num, denom)
+    result: Dict[str, Dict[Stat, Dict[str, Tuple[float, int]]]] = {}
 
     for player, positions in position_buckets.items():
         result[player] = {}
 
+        # First, collect all stats for this player
+        all_stats_data: Dict[Stat, Dict[str, List[Tuple[float, int]]]] = {}
+
         # Aggregate each position bucket
         for position, stats in positions.items():
-            result[player][position] = {}
-
             for stat, values in stats.items():
+                if stat not in all_stats_data:
+                    all_stats_data[stat] = {}
+
+                # Store values for this position
+                if position not in all_stats_data[stat]:
+                    all_stats_data[stat][position] = []
+                all_stats_data[stat][position].extend(values)
+
+        # Now reorganize as stat -> position -> (num, denom)
+        for stat, position_values in all_stats_data.items():
+            result[player][stat] = {}
+
+            # Aggregate each position
+            for position, values in position_values.items():
                 total_num = sum(num for num, _ in values)
                 total_denom = sum(denom for _, denom in values)
-                result[player][position][stat] = (total_num, total_denom)
+                result[player][stat][position] = (total_num, total_denom)
 
-            # Add N (number of hands) for this position
-            if Stat.VPIP in result[player][position]:
-                _, vpip_denom = result[player][position][Stat.VPIP]
-                result[player][position][Stat.N] = (vpip_denom, vpip_denom)
-            else:
-                result[player][position][Stat.N] = (0, 0)
+            # Add "ALL" position that aggregates across all positions
+            all_values = []
+            for values in position_values.values():
+                all_values.extend(values)
 
-        # Add "ALL" position that aggregates across all positions
-        result[player]["ALL"] = {}
-        all_stats: Dict[Stat, List[Tuple[float, int]]] = {}
+            total_num = sum(num for num, _ in all_values)
+            total_denom = sum(denom for _, denom in all_values)
+            result[player][stat]["ALL"] = (total_num, total_denom)
 
-        for position, stats in positions.items():
-            for stat, values in stats.items():
-                if stat not in all_stats:
-                    all_stats[stat] = []
-                all_stats[stat].extend(values)
-
-        for stat, values in all_stats.items():
-            total_num = sum(num for num, _ in values)
-            total_denom = sum(denom for _, denom in values)
-            result[player]["ALL"][stat] = (total_num, total_denom)
-
-        # Add N for "ALL"
-        if Stat.VPIP in result[player]["ALL"]:
-            _, vpip_denom = result[player]["ALL"][Stat.VPIP]
-            result[player]["ALL"][Stat.N] = (vpip_denom, vpip_denom)
-        else:
-            result[player]["ALL"][Stat.N] = (0, 0)
+        # Add N (number of hands) stat
+        if Stat.VPIP in result[player]:
+            result[player][Stat.N] = {}
+            for position, (_, vpip_denom) in result[player][Stat.VPIP].items():
+                result[player][Stat.N][position] = (vpip_denom, vpip_denom)
 
     return result

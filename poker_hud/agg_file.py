@@ -2,12 +2,33 @@
 Functions for reading and writing .txt.agg files.
 
 The .txt.agg file stores aggregated statistics for a single session (hand history file).
-Format: JSON with metadata and per-player statistics.
+Format: JSON with metadata and per-player position-bucketed statistics.
+
+Format v2 (position-bucketed):
+{
+  "version": 2,
+  "metadata": {...},
+  "players": {
+    "alice": {
+      "VPIP": {"ALL": [11, 22], "BTN": [8, 10], "BB": [3, 12]},
+      "PFR": {"ALL": [7, 22], "BTN": [6, 10], "BB": [1, 12]},
+      ...
+    }
+  }
+}
+
+Format v1 (legacy, position-collapsed):
+{
+  "metadata": {...},
+  "players": {
+    "alice": {"VPIP": [15, 20], "PFR": [8, 20], ...}
+  }
+}
 """
 
 import json
 from pathlib import Path
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Optional
 from datetime import datetime
 
 from .stats import Stat
@@ -48,35 +69,43 @@ def agg_file_exists(source_file: Path) -> bool:
 
 def write_agg_file(
     source_file: Path,
-    session_stats: Dict[str, Dict[Stat, Tuple[int, int]]],
+    session_stats: Dict[str, Dict[Stat, Dict[str, Tuple[float, int]]]],
     num_hands: int
 ) -> Path:
     """
-    Write aggregated session statistics to a .txt.agg file.
+    Write aggregated session statistics to a .txt.agg file (v2 format with positions).
 
     Args:
         source_file: Path to the original hand history .txt file
-        session_stats: Dictionary mapping player -> (Stat -> (num, denom))
+        session_stats: Dictionary mapping player -> stat -> position -> (num, denom)
         num_hands: Total number of hands processed in the session
 
     Returns:
         Path to the created .txt.agg file
 
     Example:
-        >>> stats = {"alice": {Stat.VPIP: (15, 20), Stat.PFR: (8, 20)}}
-        >>> write_agg_file(Path("HH123.txt"), stats, 20)
+        >>> stats = {
+        ...     "alice": {
+        ...         Stat.VPIP: {"ALL": (11, 22), "BTN": (8, 10)},
+        ...         Stat.PFR: {"ALL": (7, 22), "BTN": (6, 10)}
+        ...     }
+        ... }
+        >>> write_agg_file(Path("HH123.txt"), stats, 22)
         Path("HH123.txt.agg")
     """
     agg_file = get_agg_file_path(source_file)
 
-    # Convert Stat enum to string for JSON serialization
+    # Convert Stat enum to string and positions dict for JSON serialization
     players_json = {}
     for player, stats in session_stats.items():
         players_json[player] = {}
-        for stat, (num, denom) in stats.items():
-            players_json[player][stat.value] = [num, denom]
+        for stat, positions in stats.items():
+            players_json[player][stat.value] = {}
+            for position, (num, denom) in positions.items():
+                players_json[player][stat.value][position] = [num, denom]
 
     data = {
+        "version": 2,  # Mark as v2 format
         "metadata": {
             "file": source_file.name,
             "processed_at": datetime.utcnow().isoformat() + "Z",
@@ -91,15 +120,18 @@ def write_agg_file(
     return agg_file
 
 
-def read_agg_file(agg_file: Path) -> Dict[str, Dict[Stat, Tuple[int, int]]]:
+def read_agg_file(agg_file: Path) -> Dict[str, Dict[Stat, Dict[str, Tuple[float, int]]]]:
     """
     Read aggregated session statistics from a .txt.agg file.
+
+    Supports both v1 (position-collapsed) and v2 (position-bucketed) formats.
+    V1 files are automatically converted to v2 format with an "ALL" position.
 
     Args:
         agg_file: Path to the .txt.agg file
 
     Returns:
-        Dictionary mapping player -> (Stat -> (num, denom))
+        Dictionary mapping player -> stat -> position -> (num, denom)
 
     Raises:
         FileNotFoundError: If the .txt.agg file doesn't exist
@@ -111,12 +143,30 @@ def read_agg_file(agg_file: Path) -> Dict[str, Dict[Stat, Tuple[int, int]]]:
     with open(agg_file, 'r') as f:
         data = json.load(f)
 
-    # Convert string keys back to Stat enum
+    # Check version
+    version = data.get("version", 1)  # Default to v1 if no version field
+
     session_stats = {}
-    for player, stats_json in data["players"].items():
-        session_stats[player] = {}
-        for stat_name, (num, denom) in stats_json.items():
-            stat = Stat(stat_name)  # Convert string to Stat enum
-            session_stats[player][stat] = (num, denom)
+
+    if version == 2:
+        # V2 format: player -> stat -> position -> (num, denom)
+        for player, stats_json in data["players"].items():
+            session_stats[player] = {}
+            for stat_name, positions_json in stats_json.items():
+                stat = Stat(stat_name)
+                session_stats[player][stat] = {}
+                for position, (num, denom) in positions_json.items():
+                    session_stats[player][stat][position] = (num, denom)
+
+    else:
+        # V1 format (legacy): player -> stat -> (num, denom)
+        # Convert to v2 format with "ALL" position
+        for player, stats_json in data["players"].items():
+            session_stats[player] = {}
+            for stat_name, (num, denom) in stats_json.items():
+                stat = Stat(stat_name)
+                session_stats[player][stat] = {
+                    "ALL": (num, denom)  # Put everything in "ALL" position
+                }
 
     return session_stats
