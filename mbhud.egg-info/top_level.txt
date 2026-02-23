@@ -1,3 +1,0 @@
-cli
-poker_hud
-scripts
