@@ -27,6 +27,9 @@ That's it! The HUD will now track your poker sessions in real-time.
 
 **Requirements:** Python 3.7+ and Americas Cardroom client with hand history saving enabled.
 
+If mbhud isn't recognized as a command, then your Python setup may be incomplete. Make sure both your Python folder and 
+Scripts folder are added to your PATH environment variable, then try again.
+
 ---
 
 ## Features
