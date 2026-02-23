@@ -16,20 +16,24 @@ from poker_hud.processor import DEFAULT_STAT_CALCULATORS
 from poker_hud.stats import Stat
 
 
-def format_stat(num: float, denom: int, stat: Stat) -> str:
-    """Format a stat as percentage with sample size."""
+def format_stat(num: float, denom: int, stat: Stat, include_denom: bool = True) -> str:
+    """Format a stat as percentage with optional sample size."""
     if denom == 0:
-        return "  -  (0)"
+        return "  -  " if not include_denom else "  -  (0)"
 
     # Special handling for BB/100
     if stat == Stat.BB100:
         # BB/100 = (total_bb / hands) * 100
         bb100 = (num / denom) * 100 if denom > 0 else 0
-        return f"{bb100:6.1f} ({denom})"
+        if include_denom:
+            return f"{bb100:6.1f} ({denom})"
+        return f"{bb100:6.1f}"
 
     # Regular percentage stats
     percentage = 100 * num / denom
-    return f"{percentage:5.1f}% ({denom})"
+    if include_denom:
+        return f"{percentage:5.1f}% ({denom})"
+    return f"{percentage:5.1f}%"
 
 
 def display_detailed_stats(hero: str):
@@ -83,55 +87,85 @@ def display_detailed_stats(hero: str):
         print(f"Total Hands: {n_hands}")
         print()
 
-    # Define position ordering for display (most common positions first)
-    position_order = ["BTN", "SB", "BB", "BTN-1", "BTN-2", "BTN-3", "BTN-4", "BTN-5"]
-
-    # Get positions that hero actually played (exclude "ALL")
-    # Look at any stat to find all positions
+    # Define position ordering for display: ALL first, then BTN-X (highest to lowest), then BTN, SB, BB
+    # Get all positions that hero actually played
     all_positions = set()
     for stat, position_data in hero_stats.items():
         all_positions.update(position_data.keys())
-    all_positions.discard("ALL")  # Remove "ALL" from positions
+    all_positions.discard("ALL")  # We'll add ALL first
 
-    # Order positions according to our preference
-    positions_played = [pos for pos in position_order if pos in all_positions]
+    # Separate BTN-X positions from named positions
+    btn_x_positions = []
+    named_positions = []
 
-    # Add any other positions not in our predefined list
-    other_positions = sorted([pos for pos in all_positions if pos not in position_order])
-    positions_played.extend(other_positions)
+    for pos in all_positions:
+        if pos.startswith("BTN-"):
+            try:
+                # Extract the number after BTN-
+                num = int(pos.split("-")[1])
+                btn_x_positions.append((num, pos))
+            except (ValueError, IndexError):
+                named_positions.append(pos)
+        else:
+            named_positions.append(pos)
 
-    if not positions_played:
+    # Sort BTN-X positions from highest to lowest (BTN-6 before BTN-5 before ... BTN-1)
+    btn_x_positions.sort(reverse=True)
+    btn_x_sorted = [pos for _, pos in btn_x_positions]
+
+    # Define order for named positions
+    named_order = ["BTN", "SB", "BB"]
+    named_sorted = [pos for pos in named_order if pos in named_positions]
+
+    # Build final position list: ALL, BTN-X (high to low), BTN, SB, BB
+    positions_to_display = ["ALL"] + btn_x_sorted + named_sorted
+
+    if len(positions_to_display) <= 1:  # Only "ALL"
         print("No position data available.")
         return
 
-    # Display each stat with position breakdown
+    # Display stats as a table: rows = stats, columns = positions
     stat_order = [Stat.VPIP, Stat.PFR, Stat.THREE_B, Stat.ATS, Stat.F3B, Stat.BB100]
 
-    for stat in stat_order:
-        print(f"{stat.value}")
-        print("-" * 80)
+    # Column widths
+    col_width = 10  # Width for each position column
+    stat_col_width = 8
 
-        # Check if this stat exists for the hero
+    # Print header
+    header = f"{'Stat':<{stat_col_width}}"
+    for pos in positions_to_display:
+        header += f"{pos:>{col_width}}"
+    print(header)
+    print("-" * (stat_col_width + col_width * len(positions_to_display)))
+
+    # Print each stat as two rows: percentages, then sample sizes
+    for stat in stat_order:
         if stat not in hero_stats:
-            print(f"  No data for {stat.value}")
-            print()
             continue
 
         stat_positions = hero_stats[stat]
 
-        # Show aggregate first
-        if "ALL" in stat_positions:
-            num, denom = stat_positions["ALL"]
-            formatted = format_stat(num, denom, stat)
-            print(f"  {'ALL':8s}: {formatted}")
-
-        # Show each position
-        for position in positions_played:
+        # Row 1: Stat name and percentages
+        row_pct = f"{stat.value:<{stat_col_width}}"
+        for position in positions_to_display:
             if position in stat_positions:
                 num, denom = stat_positions[position]
-                formatted = format_stat(num, denom, stat)
-                print(f"  {position:8s}: {formatted}")
+                formatted = format_stat(num, denom, stat, include_denom=False)
+                row_pct += f"{formatted:>{col_width}}"
+            else:
+                row_pct += f"{'  -':>{col_width}}"
 
+        # Row 2: Sample sizes (indented)
+        row_n = f"{'':>{stat_col_width}}"
+        for position in positions_to_display:
+            if position in stat_positions:
+                num, denom = stat_positions[position]
+                row_n += f"{'(' + str(denom) + ')':>{col_width}}"
+            else:
+                row_n += f"{'':>{col_width}}"
+
+        print(row_pct)
+        print(row_n)
         print()
 
     print("=" * 80)
