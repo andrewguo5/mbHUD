@@ -2,6 +2,31 @@
 
 Real-time poker statistics tracker for ACR cash games.
 
+## Quick Start
+
+Get up and running in under a minute:
+
+**1. Install mbHUD:**
+```bash
+pip3 install https://github.com/andrewguo5/mbHUD/releases/download/v0.1.0/mbhud-0.1.0-py3-none-any.whl
+```
+
+**2. Configure your settings:**
+```bash
+mbhud init
+```
+
+**3. Start tracking:**
+```bash
+mbhud start
+```
+
+That's it! The HUD will now track your poker sessions in real-time.
+
+**Requirements:** Python 3.7+ and Americas Cardroom client with hand history saving enabled.
+
+---
+
 ## Features
 
 - Tracks comprehensive stats (VPIP, PFR, 3B, ATS, F3B, BB100)
@@ -13,6 +38,22 @@ Real-time poker statistics tracker for ACR cash games.
 
 ## Installation
 
+### Option 1: Install from GitHub Release (Recommended)
+
+Download and install the latest release directly:
+
+```bash
+pip3 install https://github.com/andrewguo5/mbHUD/releases/download/v0.1.0/mbhud-0.1.0-py3-none-any.whl
+```
+
+Or download the `.whl` file from the [latest release](https://github.com/andrewguo5/mbHUD/releases/latest) and install locally:
+
+```bash
+pip3 install mbhud-0.1.0-py3-none-any.whl
+```
+
+### Option 2: Install from Source (For Development)
+
 1. **Clone the repository:**
 ```bash
 git clone https://github.com/andrewguo5/mbHUD.git
@@ -21,10 +62,10 @@ cd mbHUD
 
 2. **Install the package:**
 ```bash
-pip install -e .
+pip3 install -e .
 ```
 
-This installs mbHUD and creates the `mbhud` command.
+This installs mbHUD in editable mode and creates the `mbhud` command.
 
 **Note:** If you see "command not found: pip", use `pip3` instead. See [INSTALL.md](INSTALL.md) for detailed troubleshooting.
 
@@ -63,19 +104,6 @@ The program makes a local copy of your ACR hand history folder and pre-processes
 You can run `mbhud start`, which will perform a flush and then start the live tracker, or you can manually run `mbhud flush` followed by `mbhud live` or `mbhud stats`. 
 
 To update the stats, run `mbhud flush` to process any new hands. When using the live tracker, you do not have to flush. It will watch the ACR hand history directory, detect any new hands, and update the stats automatically. Stats only update after a hand is finished, so there is always a 1-hand delay.
-
-## Quick Start
-
-### Start HUD (recommended):
-```bash
-mbhud start
-```
-Quick-start option. Run this after `mbhud init` and then you can start playing on ACR.
-
-### View all commands:
-```bash
-mbhud --help
-```
 
 ## Commands
 
