@@ -137,8 +137,43 @@ source ~/.bashrc
 ```
 
 **Windows:**
-- Add `C:\Python3X\Scripts\` to your PATH environment variable
-- Restart your terminal
+
+First, find where Python installed the Scripts folder:
+```cmd
+python -c "import site; print(site.USER_BASE + '\\Scripts')"
+```
+
+This will output something like:
+```
+C:\Users\YourName\AppData\Roaming\Python\Python311\Scripts
+```
+
+Now add this path to your PATH environment variable:
+
+1. Press Windows key and search for "Environment Variables"
+2. Click "Edit the system environment variables"
+3. Click the "Environment Variables" button at the bottom
+4. Under "User variables" (top section), find and select "Path"
+5. Click "Edit"
+6. Click "New"
+7. Paste the Scripts path from above (e.g., `C:\Users\YourName\AppData\Roaming\Python\Python311\Scripts`)
+8. Click "OK" on all dialogs
+9. **Close and reopen your terminal/command prompt** (required for changes to take effect)
+10. Test: `mbhud --help`
+
+**Alternative (if you don't want to modify PATH):**
+
+You can always run mbhud using:
+```cmd
+python -m cli <command>
+```
+
+For example:
+```cmd
+python -m cli init
+python -m cli start
+python -m cli stats
+```
 
 ### "No module named 'click'"
 

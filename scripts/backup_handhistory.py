@@ -6,8 +6,8 @@ ACR only keeps the previous 30 days of hand history, so this script
 backs up files to a persistent location with no TTL.
 """
 
-import subprocess
 import sys
+import shutil
 from pathlib import Path
 import json
 
@@ -25,7 +25,7 @@ def load_config():
 
 
 def backup_handhistory():
-    """Rsync hand history files to persistent storage."""
+    """Copy hand history files to persistent storage (cross-platform)."""
     config = load_config()
 
     # Source: ACR hand history directory
@@ -42,45 +42,45 @@ def backup_handhistory():
     # Ensure destination exists
     dest_dir.mkdir(parents=True, exist_ok=True)
 
-    # Add trailing slashes for rsync
-    # rsync behavior: source/ means "contents of source", source means "source directory itself"
-    source = str(source_dir) + "/"
-    dest = str(dest_dir) + "/"
-
     print(f"Backing up hand history files...")
     print(f"  From: {source_dir}")
     print(f"  To:   {dest_dir}")
 
-    # rsync options:
-    # -a: archive mode (preserves timestamps, permissions, etc.)
-    # -v: verbose
-    # --progress: show progress during transfer
-    # --ignore-existing: skip files that already exist in destination (faster)
-    try:
-        result = subprocess.run(
-            ["rsync", "-av", "--progress", "--ignore-existing", source, dest],
-            check=True,
-            capture_output=True,
-            text=True
-        )
+    # Find all .txt files in source directory
+    txt_files = list(source_dir.glob("*.txt"))
 
-        print("\nBackup complete!")
+    if not txt_files:
+        print("\nNo .txt files found in source directory")
+        return
 
-        # Show summary
-        output_lines = result.stdout.strip().split('\n')
-        # Last few lines typically contain the summary
-        if len(output_lines) > 3:
-            print("\nSummary:")
-            for line in output_lines[-3:]:
-                print(f"  {line}")
+    copied = 0
+    skipped = 0
+    errors = 0
 
-    except subprocess.CalledProcessError as e:
-        print(f"Error during rsync: {e}")
-        print(f"stderr: {e.stderr}")
-        sys.exit(1)
-    except FileNotFoundError:
-        print("Error: rsync command not found. Please ensure rsync is installed.")
-        sys.exit(1)
+    for source_file in txt_files:
+        dest_file = dest_dir / source_file.name
+
+        try:
+            # Skip if file already exists in destination
+            if dest_file.exists():
+                skipped += 1
+                continue
+
+            # Copy file, preserving metadata
+            shutil.copy2(source_file, dest_file)
+            copied += 1
+
+        except Exception as e:
+            print(f"  Error copying {source_file.name}: {e}")
+            errors += 1
+
+    print("\nBackup complete!")
+    print(f"\nSummary:")
+    print(f"  Files copied: {copied}")
+    print(f"  Files skipped (already exist): {skipped}")
+    print(f"  Total files in source: {len(txt_files)}")
+    if errors > 0:
+        print(f"  Errors: {errors}")
 
 
 if __name__ == "__main__":
