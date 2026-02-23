@@ -8,10 +8,13 @@ from poker_hud.processor import process_session_file, aggregate_all_sessions
 from poker_hud.stats import Stat
 
 
-def main():
-    print("=" * 120)
+def main(page=1):
+    # Pagination settings
+    players_per_page = 20
+
+    print("=" * 160)
     print("POKER HUD - Overall Statistics Across All Sessions")
-    print("=" * 120)
+    print("=" * 160)
 
     # Find and process all hand history files
     print("\nFinding and processing hand history files...")
@@ -39,9 +42,9 @@ def main():
     overall_stats = aggregate_all_sessions(session_stats_list)
 
     # Display results
-    print(f"\n{'=' * 120}")
+    print(f"\n{'=' * 160}")
     print(f"OVERALL STATISTICS - {len(overall_stats)} UNIQUE PLAYERS")
-    print("=" * 120)
+    print("=" * 160)
     print()
 
     # Sort players by number of hands (descending)
@@ -51,12 +54,26 @@ def main():
         reverse=True
     )
 
+    # Calculate pagination
+    start_idx = (page - 1) * players_per_page
+    end_idx = start_idx + players_per_page
+    total_pages = (len(sorted_players) + players_per_page - 1) // players_per_page
+
+    if page < 1 or page > total_pages:
+        print(f"Invalid page number. Please use page 1-{total_pages}")
+        return
+
+    paginated_players = sorted_players[start_idx:end_idx]
+
+    print(f"Page {page} of {total_pages} (showing players {start_idx + 1}-{min(end_idx, len(sorted_players))} of {len(sorted_players)})")
+    print()
+
     # Print header
-    print(f"{'Player':<25} {'Hands':>8}  {'VPIP %':>8} {'VPIP':>12}  {'PFR %':>8} {'PFR':>12}  {'3B %':>8} {'3B':>12}  {'BB/100':>10}")
-    print("-" * 120)
+    print(f"{'Player':<25} {'Hands':>8}  {'VPIP %':>8} {'VPIP':>12}  {'PFR %':>8} {'PFR':>12}  {'3B %':>8} {'3B':>12}  {'ATS %':>8} {'ATS':>10}  {'F3B %':>8} {'F3B':>10}  {'BB/100':>10}")
+    print("-" * 160)
 
     # Print each player
-    for player, stats in sorted_players:
+    for player, stats in paginated_players:
         n_hands = stats.get(Stat.N, (0, 0))[0]
 
         vpip_num, vpip_denom = stats.get(Stat.VPIP, (0, 0))
@@ -71,10 +88,18 @@ def main():
         threeb_pct = (threeb_num / threeb_denom * 100) if threeb_denom > 0 else 0
         threeb_str = f"{threeb_num}/{threeb_denom}"
 
+        ats_num, ats_denom = stats.get(Stat.ATS, (0, 0))
+        ats_pct = (ats_num / ats_denom * 100) if ats_denom > 0 else 0
+        ats_str = f"{ats_num}/{ats_denom}"
+
+        f3b_num, f3b_denom = stats.get(Stat.F3B, (0, 0))
+        f3b_pct = (f3b_num / f3b_denom * 100) if f3b_denom > 0 else 0
+        f3b_str = f"{f3b_num}/{f3b_denom}"
+
         bb100_total, bb100_hands = stats.get(Stat.BB100, (0, 0))
         bb100 = (bb100_total / bb100_hands * 100) if bb100_hands > 0 else 0
 
-        print(f"{player:<25} {n_hands:>8}  {vpip_pct:>7.1f}% {vpip_str:>12}  {pfr_pct:>7.1f}% {pfr_str:>12}  {threeb_pct:>7.1f}% {threeb_str:>12}  {bb100:>9.1f}")
+        print(f"{player:<25} {n_hands:>8}  {vpip_pct:>7.1f}% {vpip_str:>12}  {pfr_pct:>7.1f}% {pfr_str:>12}  {threeb_pct:>7.1f}% {threeb_str:>12}  {ats_pct:>7.1f}% {ats_str:>10}  {f3b_pct:>7.1f}% {f3b_str:>10}  {bb100:>9.1f}")
 
     # Summary statistics
     print()

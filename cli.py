@@ -44,10 +44,11 @@ def flush():
 
 
 @cli.command()
-def stats():
+@click.option('--page', '-p', default=1, type=int, help='Page number (20 players per page)')
+def stats(page):
     """Display overall statistics across all sessions"""
     from scripts.display_stats import main
-    main()
+    main(page)
 
 
 @cli.command()
