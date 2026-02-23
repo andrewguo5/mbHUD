@@ -184,7 +184,15 @@ class LiveStatsTracker:
                 session_stats = read_agg_file(agg_file)
 
                 if player in session_stats:
-                    for stat, (num, denom) in session_stats[player].items():
+                    for stat, positions in session_stats[player].items():
+                        # Aggregate across all positions (use "ALL" if available)
+                        if "ALL" in positions:
+                            num, denom = positions["ALL"]
+                        else:
+                            # Fallback: sum across all position buckets
+                            num = sum(n for n, _ in positions.values())
+                            denom = sum(d for _, d in positions.values())
+
                         if stat not in cached_stats:
                             cached_stats[stat] = (0, 0)
 
