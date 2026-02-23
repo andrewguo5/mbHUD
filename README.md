@@ -10,7 +10,7 @@ Get up and running in under a minute:
 **1. Install from the latest release:**
 
 ```bash
-pip3 install https://github.com/andrewguo5/mbHUD/releases/download/v0.1.2/mbhud-0.1.2-py3-none-any.whl
+pip3 install https://github.com/andrewguo5/mbHUD/releases/download/v0.2.0/mbhud-0.2.0-py3-none-any.whl
 ```
 
 **2. Configure your settings:**
@@ -45,7 +45,7 @@ That's it! The HUD will now track your poker sessions in real-time.
 Install directly from the [latest release](https://github.com/andrewguo5/mbHUD/releases/latest):
 
 ```bash
-pip3 install https://github.com/andrewguo5/mbHUD/releases/download/v0.1.2/mbhud-0.1.2-py3-none-any.whl
+pip3 install https://github.com/andrewguo5/mbHUD/releases/download/v0.2.0/mbhud-0.2.0-py3-none-any.whl
 ```
 
 ### Option 2: Install from Source (For Development)

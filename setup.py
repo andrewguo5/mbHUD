@@ -8,7 +8,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="mbhud",
-    version="0.1.2",
+    version="0.2.0",
     description="Poker HUD for Americas Cardroom",
     author="Andrew Guo",
     python_requires=">=3.7",
