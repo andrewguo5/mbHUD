@@ -11,7 +11,7 @@ Get up and running in under a minute:
 
 Visit [Releases](https://github.com/andrewguo5/mbHUD/releases/latest) and download the `.whl` file, then install it:
 ```bash
-pip3 install mbhud-*.whl
+pip3 install mbhud-0.1.1-py3-none-any.whl
 ```
 
 **2. Configure your settings:**
