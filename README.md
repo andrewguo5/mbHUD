@@ -177,6 +177,11 @@ For debugger/dev use.
 - Make sure you ran `pip install -e .`
 - Check that Python's bin directory is in PATH
 
+**Windows CMD goes blank randomly during live tracking**
+- Press Enter to restore the live tracker
+- Possibly caused by QuickEdit mode
+- Right Click the title bar -> Properties -> Deselect QuickEdit mode
+
 ## Requirements
 
 - Python 3.7+
