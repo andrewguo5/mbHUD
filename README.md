@@ -4,6 +4,7 @@ Real-time poker statistics tracker for ACR cash games.
 
 ## Quick Start
 
+You will need Python installed.
 Get up and running in under a minute:
 
 **1. Install mbHUD:**
