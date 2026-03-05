@@ -244,6 +244,156 @@ def calculate_f3b(parsed: ParsedHand) -> Dict[str, Tuple[int, int]]:
     return result
 
 
+def calculate_4bet(parsed: ParsedHand) -> Dict[str, Tuple[int, int]]:
+    """
+    Calculate 4-bet (or higher) frequency from ParsedHand.
+
+    4-bet Definition:
+    - Only players who have already raised in the hand can have a 4-bet opportunity
+    - If action comes back to a player who has raised, they have a 4-bet opportunity
+    - By virtue of action coming back, someone must have raised (re-opening action)
+    - Numerator: 1 if player raises (4-bet/5-bet/etc), 0 if fold/call
+    - Denominator: 1 for each time action comes back to a player who has raised
+
+    Note: We ignore the rare case where someone goes all-in but doesn't re-open action
+    (insufficient raise). In that case, action comes back but player cannot 4-bet, only call.
+    This is exceedingly rare and not tracked.
+
+    Args:
+        parsed: ParsedHand object
+
+    Returns:
+        Dictionary mapping player names to (numerator, denominator) tuples
+    """
+    result = {}
+    player_has_raised = set()  # Track who has raised in this hand
+
+    for action in parsed.preflop.actions:
+        # Skip blind/ante posts
+        if action.action_type in ('post_sb', 'post_bb', 'post_ante'):
+            continue
+
+        player = action.player
+
+        # Check if this player has already raised
+        if player in player_has_raised:
+            # Action came back to them - this is a 4-bet opportunity
+            if action.action_type == 'raise':
+                result[player] = (1, 1)  # They 4-bet
+            elif action.action_type in ('call', 'fold'):
+                result[player] = (0, 1)  # They didn't 4-bet
+        else:
+            # Player hasn't raised yet - check if they raise now
+            if action.action_type == 'raise':
+                player_has_raised.add(player)
+
+    return result
+
+
+def calculate_cbet(parsed: ParsedHand) -> Dict[str, Tuple[int, int]]:
+    """
+    Calculate continuation bet (cbet) frequency from ParsedHand.
+
+    Cbet Definition:
+    - The preflop aggressor (last raiser preflop) continues aggression on the flop
+    - Only counts if action is checked to the aggressor (first to bet on flop)
+    - If someone donk bets into the aggressor, this is NOT a cbet opportunity
+    - Check-raises do NOT count as cbets
+    - Numerator: 1 if aggressor bet when checked to, 0 if checked
+    - Denominator: 1 if aggressor was checked to (bet/check), 0 if bet into (fold/call/raise)
+
+    Args:
+        parsed: ParsedHand object
+
+    Returns:
+        Dictionary mapping player names to (numerator, denominator) tuples
+    """
+    result = {}
+    preflop_aggressor = None
+
+    # Determine preflop aggressor (last raiser preflop)
+    for action in parsed.preflop.actions:
+        if action.action_type in ('post_sb', 'post_bb', 'post_ante'):
+            continue
+        if action.action_type == 'raise':
+            preflop_aggressor = action.player
+
+    # If no preflop aggressor or no flop, return empty
+    if not preflop_aggressor or 'flop' not in parsed.streets:
+        return result
+
+    # Find the preflop aggressor's first action on the flop
+    for action in parsed.streets['flop'].actions:
+        if action.player == preflop_aggressor:
+            # Map action to numerator/denominator
+            if action.action_type == 'bet':
+                result[preflop_aggressor] = (1, 1)  # Made a cbet
+            elif action.action_type == 'check':
+                result[preflop_aggressor] = (0, 1)  # Had opportunity, didn't cbet
+            # fold/call/raise means they were bet into - no cbet opportunity
+            break
+
+    return result
+
+
+def calculate_fold_to_cbet(parsed: ParsedHand) -> Dict[str, Tuple[int, int]]:
+    """
+    Calculate fold to continuation bet (fold to cbet) frequency from ParsedHand.
+
+    Fold to Cbet Definition:
+    - Measures how often a player folds when facing a cbet
+    - A cbet is when the preflop aggressor bets after being checked to on the flop
+    - Numerator: 1 if player folded to cbet, 0 if call/raise
+    - Denominator: 1 if player faced a cbet
+    - State tracking: cbet is "active" until someone raises it
+
+    Args:
+        parsed: ParsedHand object
+
+    Returns:
+        Dictionary mapping player names to (numerator, denominator) tuples
+    """
+    result = {}
+    preflop_aggressor = None
+
+    # Determine preflop aggressor (last raiser preflop)
+    for action in parsed.preflop.actions:
+        if action.action_type in ('post_sb', 'post_bb', 'post_ante'):
+            continue
+        if action.action_type == 'raise':
+            preflop_aggressor = action.player
+
+    # If no preflop aggressor or no flop, return empty
+    if not preflop_aggressor or 'flop' not in parsed.streets:
+        return result
+
+    # State tracking
+    cbet_active = False  # Is there currently a cbet that players are facing?
+
+    for action in parsed.streets['flop'].actions:
+        player = action.player
+
+        if player == preflop_aggressor:
+            # Preflop aggressor's action
+            if action.action_type == 'bet':
+                cbet_active = True  # Cbet made, now active
+            # Any other action (check/fold/call/raise) - no cbet or cbet no longer original
+
+        else:
+            # Other player's action
+            if cbet_active:
+                # This player is facing the cbet
+                if action.action_type == 'fold':
+                    result[player] = (1, 1)
+                elif action.action_type == 'call':
+                    result[player] = (0, 1)
+                elif action.action_type == 'raise':
+                    result[player] = (0, 1)
+                    cbet_active = False  # Cbet raised, no longer facing original cbet
+
+    return result
+
+
 def calculate_bb100(parsed: ParsedHand) -> Dict[str, Tuple[float, int]]:
     """
     Calculate BB/100 (big blinds won per 100 hands) from ParsedHand.
