@@ -10,7 +10,7 @@ Get up and running in under a minute:
 **1. Install from the latest release:**
 
 ```bash
-pip3 install https://github.com/andrewguo5/mbHUD/releases/download/v0.2.0/mbhud-0.2.0-py3-none-any.whl
+pip3 install https://github.com/andrewguo5/mbHUD/releases/download/v0.3.0/mbhud-0.3.0-py3-none-any.whl
 ```
 
 **2. Configure your settings:**
@@ -34,7 +34,7 @@ Scripts folder are added to your PATH environment variable, then try again.
 
 ## Features
 
-- Tracks comprehensive stats (VPIP, PFR, 3B, ATS, F3B, BB100)
+- Tracks comprehensive stats (VPIP, PFR, 3B, 4B, ATS, F3B, CBET, FCBET, BB100)
 - Position-aware stat tracking (BTN, SB, BB, CO, HJ, etc.)
 - Real-time display in command line
 - Paginated stats view for large player pools
@@ -48,7 +48,7 @@ Scripts folder are added to your PATH environment variable, then try again.
 Install directly from the [latest release](https://github.com/andrewguo5/mbHUD/releases/latest):
 
 ```bash
-pip3 install https://github.com/andrewguo5/mbHUD/releases/download/v0.2.0/mbhud-0.2.0-py3-none-any.whl
+pip3 install https://github.com/andrewguo5/mbHUD/releases/download/v0.3.0/mbhud-0.3.0-py3-none-any.whl
 ```
 
 ### Option 2: Install from Source (For Development)
@@ -90,8 +90,11 @@ Default hand history locations:
 - **VPIP** (Voluntarily Put money In Pot): How often a player puts money in the pot preflop
 - **PFR** (Pre-Flop Raise): How often a player raises preflop
 - **3B** (3-Bet): How often a player 3-bets when facing a raise
+- **4B** (4-Bet): How often a player 4-bets (or higher) when action returns to them after raising
 - **ATS** (Attempt To Steal): How often a player raises from late position (CO/BTN/SB) when folded to
 - **F3B** (Fold to 3-Bet): How often a player folds after raising preflop and facing a 3-bet
+- **CBET** (Continuation Bet): How often the preflop aggressor bets on the flop when checked to
+- **FCBET** (Fold to C-Bet): How often a player folds when facing a continuation bet
 - **BB/100**: Big blinds won per 100 hands
 
 All stats are tracked both in aggregate and broken down by position (BTN, SB, BB, CO/BTN-1, HJ/BTN-2, etc.).
