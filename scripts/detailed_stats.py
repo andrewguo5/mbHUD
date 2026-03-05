@@ -125,7 +125,7 @@ def display_detailed_stats(hero: str):
         return
 
     # Display stats as a table: rows = stats, columns = positions
-    stat_order = [Stat.VPIP, Stat.PFR, Stat.THREE_B, Stat.ATS, Stat.F3B, Stat.BB100]
+    stat_order = [Stat.VPIP, Stat.PFR, Stat.THREE_B, Stat.FOUR_B, Stat.ATS, Stat.F3B, Stat.CBET, Stat.FCBET, Stat.BB100]
 
     # Column widths
     col_width = 10  # Width for each position column

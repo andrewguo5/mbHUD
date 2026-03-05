@@ -19,6 +19,10 @@ from poker_hud.flush_manager import is_live_file, get_last_flush_time
 from poker_hud.stats import Stat
 
 
+# Display configuration
+DISPLAY_WIDTH = 140  # Total width of the HUD display
+
+
 def clear_screen():
     """Clear the terminal screen."""
     os.system('clear' if os.name != 'nt' else 'cls')
@@ -48,13 +52,13 @@ def display_hud(tracker: LiveStatsTracker, last_flush_time: float):
     """
     clear_screen()
 
-    print("=" * 120)
+    print("=" * DISPLAY_WIDTH)
     print("mbHUD - Live Poker Statistics")
-    print("=" * 120)
+    print("=" * DISPLAY_WIDTH)
     print(f"Username: {USERNAME}")
     print(f"Last flush: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(last_flush_time))}")
     print(f"Update time: {time.strftime('%Y-%m-%d %H:%M:%S')}")
-    print("=" * 120)
+    print("=" * DISPLAY_WIDTH)
     print()
 
     # Find all live files from ACR directory (for real-time updates)
@@ -89,14 +93,14 @@ def display_hud(tracker: LiveStatsTracker, last_flush_time: float):
                 continue
 
             # Display table header
-            print(f"\n{'─' * 120}")
+            print(f"\n{'─' * DISPLAY_WIDTH}")
             print(f"TABLE: {table_state.table_name} ({table_state.max_seats}-max)")
             print(f"Hands played: {len(hands)}")
-            print(f"{'─' * 120}")
+            print(f"{'─' * DISPLAY_WIDTH}")
 
             # Display column headers
-            print(f"{'Seat':<6} {'Player':<20} {'Hands':>8}  {'VPIP':>8}  {'PFR':>8}  {'3B':>8}  {'ATS':>8}  {'F3B':>8}  {'BB/100':>8}")
-            print("─" * 120)
+            print(f"{'Seat':<6} {'Player':<20} {'Hands':>8}  {'VPIP':>8}  {'PFR':>8}  {'3B':>8}  {'4B':>8}  {'ATS':>8}  {'F3B':>8}  {'CBET':>8}  {'FCBET':>8}  {'BB/100':>8}")
+            print("─" * DISPLAY_WIDTH)
 
             # Get seats in clockwise order from hero
             seats = table_state.get_clockwise_seats_from_hero()
@@ -114,29 +118,35 @@ def display_hud(tracker: LiveStatsTracker, last_flush_time: float):
                     vpip_num, vpip_denom = stats.get(Stat.VPIP, (0, 0))
                     pfr_num, pfr_denom = stats.get(Stat.PFR, (0, 0))
                     threeb_num, threeb_denom = stats.get(Stat.THREE_B, (0, 0))
+                    fourb_num, fourb_denom = stats.get(Stat.FOUR_B, (0, 0))
                     ats_num, ats_denom = stats.get(Stat.ATS, (0, 0))
                     f3b_num, f3b_denom = stats.get(Stat.F3B, (0, 0))
+                    cbet_num, cbet_denom = stats.get(Stat.CBET, (0, 0))
+                    fcbet_num, fcbet_denom = stats.get(Stat.FCBET, (0, 0))
                     bb100_total, bb100_hands = stats.get(Stat.BB100, (0, 0))
 
                     # Format stats
                     vpip_str = format_stat(vpip_num, vpip_denom, is_percentage=True)
                     pfr_str = format_stat(pfr_num, pfr_denom, is_percentage=True)
                     threeb_str = format_stat(threeb_num, threeb_denom, is_percentage=True)
+                    fourb_str = format_stat(fourb_num, fourb_denom, is_percentage=True)
                     ats_str = format_stat(ats_num, ats_denom, is_percentage=True)
                     f3b_str = format_stat(f3b_num, f3b_denom, is_percentage=True)
+                    cbet_str = format_stat(cbet_num, cbet_denom, is_percentage=True)
+                    fcbet_str = format_stat(fcbet_num, fcbet_denom, is_percentage=True)
                     bb100_str = format_stat(bb100_total, bb100_hands, is_percentage=False)
 
                     # Mark hero with asterisk
                     display_name = f"{player_name} *" if player_name == USERNAME else player_name
 
-                    print(f"{seat_num:<6} {display_name:<20} {n_hands:>8}  {vpip_str:>8}  {pfr_str:>8}  {threeb_str:>8}  {ats_str:>8}  {f3b_str:>8}  {bb100_str:>8}")
+                    print(f"{seat_num:<6} {display_name:<20} {n_hands:>8}  {vpip_str:>8}  {pfr_str:>8}  {threeb_str:>8}  {fourb_str:>8}  {ats_str:>8}  {f3b_str:>8}  {cbet_str:>8}  {fcbet_str:>8}  {bb100_str:>8}")
 
             print()
 
         except Exception as e:
             print(f"\nError processing {file_path.name}: {e}")
 
-    print("─" * 120)
+    print("─" * DISPLAY_WIDTH)
     print("Press Ctrl+C to stop")
 
 
@@ -165,9 +175,9 @@ def main():
             if current_flush_time > last_flush_time:
                 # Don't clear screen - show message at bottom
                 print("\n")
-                print("=" * 120)
+                print("=" * DISPLAY_WIDTH)
                 print("⚡ FLUSH DETECTED!")
-                print("=" * 120)
+                print("=" * DISPLAY_WIDTH)
                 print(f"Previous flush: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(last_flush_time))}")
                 print(f"New flush:      {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(current_flush_time))}")
                 print("\nProcessing flush...")
