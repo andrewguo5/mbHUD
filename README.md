@@ -5,7 +5,6 @@ Real-time poker statistics tracker for ACR cash games.
 ## Quick Start
 
 You will need Python installed.
-Get up and running in under a minute:
 
 **1. Install from the latest release:**
 
@@ -23,23 +22,24 @@ mbhud init
 mbhud start
 ```
 
-That's it! The HUD will now track your poker sessions in real-time.
+Join a room on ACR and the display will begin tracking your stats. Note that stats only update after the current hand has been completed.
 
 **Requirements:** Python 3.7+ and Americas Cardroom client with hand history saving enabled.
 
-If mbhud isn't recognized as a command, then your Python setup may be incomplete. Make sure both your Python folder and 
-Scripts folder are added to your PATH environment variable, then try again.
+If mbhud isn't recognized as a command, then your Python setup may be incomplete. On Windows, make sure both your Python folder and 
+Scripts folder are added to your PATH environment variable, then try again. 
+
+If Python works but mbhud doesn't, then it's likely that you need to also add your Scripts folder to your PATH.
 
 ---
 
 ## Features
 
-- Tracks comprehensive stats (VPIP, PFR, 3B, 4B, ATS, F3B, CBET, FCBET, BB100)
-- Position-aware stat tracking (BTN, SB, BB, CO, HJ, etc.)
-- Real-time display in command line
-- Paginated stats view for large player pools
-- Detailed position breakdown for your stats
-- Simple setup and configuration
+- Tracks common and useful stats (VPIP, PFR, 3B, 4B, ATS, F3B, CBET, FCBET, BB100)
+- Position-aware breakdowns (BTN, SB, BB, CO, HJ, etc.)
+- Real-time display in command line (overlay is WIP)
+- Detailed stats view for all players you've ever encountered in your hand history
+- Everything is done via the command line (easier for nerds)
 
 ## Installation
 
@@ -50,6 +50,8 @@ Install directly from the [latest release](https://github.com/andrewguo5/mbHUD/r
 ```bash
 pip3 install https://github.com/andrewguo5/mbHUD/releases/download/v0.3.0/mbhud-0.3.0-py3-none-any.whl
 ```
+
+Double check the latest version on the release page. I might not remember to update this README but both Claude and I will make an effort to do so.
 
 ### Option 2: Install from Source (For Development)
 
@@ -64,13 +66,13 @@ cd mbHUD
 pip3 install -e .
 ```
 
-This installs mbHUD in editable mode and creates the `mbhud` command.
+This installs mbHUD in editable mode and creates the `mbhud` command. You can do this if you really want to see the source code, I guess.
 
 **Note:** If you see "command not found: pip", use `pip3` instead. See [INSTALL.md](INSTALL.md) for detailed troubleshooting.
 
 ## Setup
 
-Run the initialization:
+Always run the initialization if it's your first time:
 ```bash
 mbhud init
 ```
@@ -85,27 +87,13 @@ Default hand history locations:
 - Mac: `~/Downloads/AmericasCardroom/handHistory/<username>/`
 - Windows: `C:\ACR Poker\handHistory\<username>`
 
-## Statistics Tracked
-
-- **VPIP** (Voluntarily Put money In Pot): How often a player puts money in the pot preflop
-- **PFR** (Pre-Flop Raise): How often a player raises preflop
-- **3B** (3-Bet): How often a player 3-bets when facing a raise
-- **4B** (4-Bet): How often a player 4-bets (or higher) when action returns to them after raising
-- **ATS** (Attempt To Steal): How often a player raises from late position (CO/BTN/SB) when folded to
-- **F3B** (Fold to 3-Bet): How often a player folds after raising preflop and facing a 3-bet
-- **CBET** (Continuation Bet): How often the preflop aggressor bets on the flop when checked to
-- **FCBET** (Fold to C-Bet): How often a player folds when facing a continuation bet
-- **BB/100**: Big blinds won per 100 hands
-
-All stats are tracked both in aggregate and broken down by position (BTN, SB, BB, CO/BTN-1, HJ/BTN-2, etc.).
-
 ## How it Works
 
-The program makes a local copy of your ACR hand history folder and pre-processes it into aggregated files. Both of these files are stored in the /data/ directory. This pre-processing action is referred to as a "flush" by the program internals.
+The program makes a local copy of your ACR hand history folder and pre-processes it into aggregated files. Both of these types of files are stored in the /data/ directory. This pre-processing action is referred to as a "flush" by the program internals. If you see "last flush time" that means the last time hand histories were synced and processed, not the last time 5 cards came out with the same suit! 
 
-You can run `mbhud start`, which will perform a flush and then start the live tracker, or you can manually run `mbhud flush` followed by `mbhud live` or `mbhud stats`. 
+You can run `mbhud start`, which will perform a flush and then start the live tracker (recommended), or you can manually run `mbhud flush` followed by `mbhud live` or `mbhud stats`. Always flush before starting the tracker or viewing stats if you want up-to-date information.
 
-To update the stats, run `mbhud flush` to process any new hands. When using the live tracker, you do not have to flush. It will watch the ACR hand history directory, detect any new hands, and update the stats automatically. Stats only update after a hand is finished, so there is always a 1-hand delay.
+To update the stats, run `mbhud flush` to process any new hands. When using the live tracker, you do not have to flush. It will watch the ACR hand history directory, detect any new hands, and update the stats automatically. However, the live process holds any stats on hands it sees in its process memory. After you're done, make sure you flush so that it saves that data to file. Stats only update after a hand is finished, so there is always a 1-hand delay. 
 
 ## Commands
 
