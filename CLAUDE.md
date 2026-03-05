@@ -148,3 +148,5 @@ Dealt to aampersands [Qs 2s]
 2. Additional stats (WTSD, W$SD, Agg%, etc.)
 3. Tournament support
 4. Database backend (currently file-based)
+- Please keep comments and descriptions short, simple and terse.
+- When creating a new release, please refer to the local ./release.sh script (not tracked by git) to perform the entire release in one step.
