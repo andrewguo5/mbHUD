@@ -143,6 +143,12 @@ mbhud clear-cache
 ```
 Delete the aggregated file cache. Use for debugging or maintenance purposes if you know what you're doing.
 
+**Export parsed hands:**
+```bash
+mbhud export
+```
+Exports your parsed hand histories as JSON Lines (one hand per line) for use by other tools/projects. Writes to `~/PokerData/` by default, with a `SCHEMA.md` describing the format. Use `--out` to change the location and `--hero` to override the username.
+
 **Watch file updates (debug):**
 ```bash
 mbhud watch

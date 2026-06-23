@@ -79,5 +79,15 @@ def backup():
     backup_handhistory()
 
 
+@cli.command()
+@click.option('--out', '-o', default=None, type=click.Path(),
+              help='Shared output dir (default: ~/PokerData)')
+@click.option('--hero', default=None, help='Hero username (default: from config.json)')
+def export(out, hero):
+    """Export parsed hands as ParsedHand JSONL for other projects"""
+    from scripts.export_parsed_hands import run_export
+    run_export(out=out, hero=hero)
+
+
 if __name__ == '__main__':
     cli()

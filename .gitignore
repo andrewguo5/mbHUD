@@ -1,6 +1,9 @@
 # User configuration
 config.json
 
+# Local dev scripts
+release.sh
+
 # Aggregated statistics cache files
 data/agg_files/
 *.agg

@@ -55,8 +55,9 @@ def parse_hand(hand: str) -> Optional[ParsedHand]:
 def _parse_metadata(lines: list) -> Optional[HandMetadata]:
     """Parse hand metadata from header lines."""
     # Line 0: Hand #2658681643 - Holdem (No Limit) - $0.05/$0.10 - 2026/01/30 16:35:59 UTC
+    # Ante games add ", Ante $X" after the blinds: ... - $0.02/$0.05, Ante $0.02 - <datetime>
     header_line = lines[0].strip()
-    match = re.match(r'Hand #(\d+) - .* - \$([\d.]+)/\$([\d.]+) - (.+)', header_line)
+    match = re.match(r'Hand #(\d+) - .* - \$([\d.]+)/\$([\d.]+)(?:, Ante \$[\d.]+)? - (.+)', header_line)
     if not match:
         return None
 
