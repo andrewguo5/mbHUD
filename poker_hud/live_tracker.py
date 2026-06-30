@@ -10,7 +10,11 @@ from typing import Dict, Set, Tuple, Optional
 import time
 
 from .stats import Stat
-from .file_manager import find_acr_hand_history_files, read_hand_history_file
+from .file_manager import (
+    find_acr_hand_history_files,
+    find_hand_history_files,
+    read_hand_history_file,
+)
 from .hand_parser import split_into_hands, extract_hand_id
 from .hand_parser_v2 import parse_hand
 from .aggregator import aggregate_session_v2
@@ -172,9 +176,25 @@ class LiveStatsTracker:
             >>> stats = tracker.get_player_stats("alice")
             >>> vpip_num, vpip_denom = stats.get(Stat.VPIP, (0, 0))
         """
-        # Start with cached stats from all historical (non-live) files
-        all_files = find_acr_hand_history_files()
-        historical_files = [f for f in all_files if not is_live_file(f)]
+        # Start with cached stats from all historical (non-live) files.
+        # Union the backup dir (full processed history) with the ACR dir
+        # (recent sessions). The backup dir holds older sessions that ACR has
+        # since purged from its download folder; the ACR dir may hold recent
+        # sessions not yet backed up. Dedupe by filename so a session present
+        # in both isn't counted twice, and skip live files (counted via
+        # self.live_stats instead).
+        backup_files = find_hand_history_files()
+        acr_files = find_acr_hand_history_files()
+
+        historical_files = []
+        seen_names: Set[str] = set()
+        for file_path in backup_files + acr_files:
+            if file_path.name in seen_names:
+                continue
+            if is_live_file(file_path):
+                continue
+            seen_names.add(file_path.name)
+            historical_files.append(file_path)
 
         cached_stats: Dict[Stat, Tuple[float, int]] = {}
 

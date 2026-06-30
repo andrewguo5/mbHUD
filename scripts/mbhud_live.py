@@ -212,6 +212,12 @@ def main():
 
     except KeyboardInterrupt:
         print("\n\nStopping mbHUD Live...")
+        # Persist this session's hands so nothing is lost before ACR purges them.
+        try:
+            from scripts.backup_handhistory import backup_handhistory
+            backup_handhistory()
+        except Exception as e:
+            print(f"Warning: Backup on exit failed: {e}")
         print("Goodbye!")
 
 
