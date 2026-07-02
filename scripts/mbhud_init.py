@@ -8,6 +8,7 @@ or under ~/PokerData): migrates any legacy data into the fixed ~/.mbHUD data
 root, then configures username + hand-history directory.
 """
 
+import importlib
 import json
 import sys
 from pathlib import Path
@@ -33,7 +34,7 @@ def migrate_legacy_if_present(cfg):
     if store is None:
         return
 
-    print("Step 1: Migrate existing data")
+    print("Migrate existing data")
     print("-" * 80)
     hint = f" (~{store.hand_count_hint} hand-history files)" if store.hand_count_hint else ""
     print(f"Found data from a previous install at: {store.root}{hint}")
@@ -52,7 +53,7 @@ def migrate_legacy_if_present(cfg):
 
 def configure_account(cfg):
     """Prompt for username + hand-history dir and write the app config.json."""
-    print("\nStep 2: Configure ACR Account")
+    print("\nConfigure ACR Account")
     print("-" * 80)
     username = input("Enter your Americas Cardroom username: ").strip()
     if not username:
@@ -82,12 +83,20 @@ def configure_account(cfg):
         print(f"Error saving config: {e}")
         sys.exit(1)
     print(f"✓ Config saved to: {cfg.CONFIG_FILE}")
+
+    # config.py resolves ACR_HAND_HISTORY_DIR/USERNAME at import, when config.json
+    # did not yet exist -- so those are stale (None) now. Reload config, then the
+    # modules that bound those values by import, so the flush sees the fresh ACR
+    # dir. (Paths derived purely from the fixed DATA_ROOT are never stale.)
+    importlib.reload(cfg)
+    import scripts.backup_handhistory as backup_module
+    importlib.reload(backup_module)
     return hh_dir, txt_files
 
 
 def run_initial_flush(hh_dir, txt_files):
     """Process any existing hand histories into aggregates."""
-    print("\nStep 3: Processing existing hand histories")
+    print("\nProcessing existing hand histories")
     print("-" * 80)
     if hh_dir.exists() and txt_files:
         from poker_hud.flush_manager import flush_all
