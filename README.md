@@ -9,7 +9,7 @@ You will need Python installed.
 **1. Install from the latest release:**
 
 ```bash
-pip3 install https://github.com/andrewguo5/mbHUD/releases/download/v0.4.0/mbhud-0.4.0-py3-none-any.whl
+pip3 install https://github.com/andrewguo5/mbHUD/releases/download/v0.5.0/mbhud-0.5.0-py3-none-any.whl
 ```
 
 **2. Configure your settings:**
@@ -49,10 +49,10 @@ If Python works but mbhud doesn't, then it's likely that you need to also add yo
 Install directly from the [latest release](https://github.com/andrewguo5/mbHUD/releases/latest):
 
 ```bash
-pip3 install https://github.com/andrewguo5/mbHUD/releases/download/v0.4.1/mbhud-0.4.1-py3-none-any.whl
+pip3 install https://github.com/andrewguo5/mbHUD/releases/download/v0.5.0/mbhud-0.5.0-py3-none-any.whl
 ```
 
-Double check the latest version on the release page. I might not remember to update this README. The above version lists 0.4.1.
+Double check the latest version on the release page. I might not remember to update this README. The above version lists 0.5.0.
 
 ### Option 2: Install from Source
 
