@@ -120,6 +120,33 @@ def write_agg_file(
     return agg_file
 
 
+def count_session_hands(session_stats: Dict[str, Dict[Stat, Dict[str, Tuple[float, int]]]]) -> int:
+    """Number of hands in a session, derived from per-player stats.
+
+    The session's hand count equals the hands seen by the player who was present
+    longest -- i.e. the MAX of each player's N["ALL"] count. Using an arbitrary
+    player undercounts, since opponents who joined mid-session saw fewer hands.
+    """
+    return max(
+        (stats.get(Stat.N, {}).get("ALL", (0, 0))[0] for stats in session_stats.values()),
+        default=0,
+    )
+
+
+def read_agg_num_hands(agg_file: Path) -> int:
+    """Authoritative hand count for a session: the persisted metadata.num_hands.
+
+    Falls back to counting from per-player stats for legacy files that predate
+    the metadata field.
+    """
+    with open(agg_file, 'r') as f:
+        data = json.load(f)
+    num_hands = data.get("metadata", {}).get("num_hands")
+    if isinstance(num_hands, int):
+        return num_hands
+    return count_session_hands(read_agg_file(agg_file))
+
+
 def read_agg_file(agg_file: Path) -> Dict[str, Dict[Stat, Dict[str, Tuple[float, int]]]]:
     """
     Read aggregated session statistics from a .txt.agg file.

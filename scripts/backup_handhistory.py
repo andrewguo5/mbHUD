@@ -9,30 +9,20 @@ backs up files to a persistent location with no TTL.
 import sys
 import shutil
 from pathlib import Path
-import json
 
-
-def load_config():
-    """Load configuration from config.json."""
-    config_path = Path(__file__).parent.parent / "config.json"
-
-    if not config_path.exists():
-        print(f"Error: config.json not found at {config_path}")
-        sys.exit(1)
-
-    with open(config_path) as f:
-        return json.load(f)
+from poker_hud.config import ACR_HAND_HISTORY_DIR, BACKUP_HANDHISTORY_DIR
 
 
 def backup_handhistory():
     """Copy hand history files to persistent storage (cross-platform)."""
-    config = load_config()
+    # Source: ACR hand history directory (from config).
+    source_dir = ACR_HAND_HISTORY_DIR
+    if source_dir is None:
+        print("Error: hand_history_dir not configured. Run 'mbhud init'.")
+        sys.exit(1)
 
-    # Source: ACR hand history directory
-    source_dir = Path(config["hand_history_dir"])
-
-    # Destination: mbHUD/data/handhistory
-    dest_dir = Path(__file__).parent.parent / "data" / "handhistory"
+    # Destination: the canonical backup dir under the user data root.
+    dest_dir = BACKUP_HANDHISTORY_DIR
 
     # Ensure source exists
     if not source_dir.exists():
