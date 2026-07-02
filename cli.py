@@ -81,7 +81,7 @@ def backup():
 
 @cli.command()
 @click.option('--out', '-o', default=None, type=click.Path(),
-              help='Shared output dir (default: ~/PokerData)')
+              help='Shared output dir (default: mbHUD data root, ~/.mbHUD)')
 @click.option('--hero', default=None, help='Hero username (default: from config.json)')
 def export(out, hero):
     """Export parsed hands as ParsedHand JSONL for other projects"""
