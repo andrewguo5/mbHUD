@@ -10,7 +10,6 @@ source-agnostic representation instead of re-parsing raw text.
 
 Output layout (mirrors source sessions):
     <out_dir>/hands/<session>.jsonl   # one ParsedHand JSON object per line
-    <out_dir>/SCHEMA.md               # the interchange-format spec
     <out_dir>/manifest.json           # export summary (counts, source, time)
 
 Each exported record is ParsedHand.to_dict() plus two self-contained extras:
@@ -33,7 +32,8 @@ from poker_hud import config
 from poker_hud.hand_parser import split_into_hands
 from poker_hud.hand_parser_v2 import parse_hand
 
-DEFAULT_OUT_DIR = Path.home() / "PokerData"
+# Export lands under the data root as hands/*.jsonl + manifest.json (see export()).
+DEFAULT_OUT_DIR = config.DATA_ROOT
 
 
 def find_hero_seat(parsed, hero: str):

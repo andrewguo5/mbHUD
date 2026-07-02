@@ -1,22 +1,38 @@
 """
 Configuration settings for the poker HUD.
 
-Reads settings from config.json in the project root.
+Persistent state lives under a fixed data root in the user's home directory,
+NOT inside the package, so the installed copy and a repo checkout always
+resolve to the same data.
+
+The data root holds handhistory/, agg_files/, and the app config.json
+(username + ACR hand-history dir). `mbhud init` writes config.json and
+performs the one-time migration of any legacy data. Nothing migrates at
+import time.
 """
 
 import json
 from pathlib import Path
 
-# Paths
-PROJECT_ROOT = Path(__file__).parent.parent
-CONFIG_FILE = PROJECT_ROOT / "config.json"
-DATA_DIR = PROJECT_ROOT / "data"
+# Fixed data root. Everything mbHUD persists lives under here.
+DATA_ROOT = Path.home() / ".mbHUD"
+
+# Resolved paths. Symbol names are stable so consumers need no changes.
+CONFIG_FILE = DATA_ROOT / "config.json"
+DATA_DIR = DATA_ROOT / "data"
 AGG_FILES_DIR = DATA_DIR / "agg_files"
 BACKUP_HANDHISTORY_DIR = DATA_DIR / "handhistory"
 
-# Ensure directories exist
-AGG_FILES_DIR.mkdir(parents=True, exist_ok=True)
-BACKUP_HANDHISTORY_DIR.mkdir(parents=True, exist_ok=True)
+
+def ensure_data_dirs() -> None:
+    """Create the storage subdirectories under the current data root."""
+    AGG_FILES_DIR.mkdir(parents=True, exist_ok=True)
+    BACKUP_HANDHISTORY_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def is_initialized() -> bool:
+    """True once `mbhud init` has written config."""
+    return CONFIG_FILE.exists()
 
 
 def load_config():

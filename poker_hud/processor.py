@@ -11,7 +11,7 @@ from .hand_parser import split_into_hands
 from .hand_parser_v2 import parse_hand
 from .stat_calculators import calculate_vpip, calculate_pfr, calculate_bb100, calculate_3bet, calculate_ats, calculate_f3b, calculate_4bet, calculate_cbet, calculate_fold_to_cbet
 from .aggregator import aggregate_session_v2, aggregate_session_by_position
-from .agg_file import agg_file_exists, write_agg_file, read_agg_file, get_agg_file_path
+from .agg_file import agg_file_exists, write_agg_file, read_agg_file, read_agg_num_hands, get_agg_file_path
 
 
 # Default stat calculators
@@ -55,6 +55,28 @@ def process_session_file(
         >>> print(stats["alice"][Stat.VPIP]["ALL"])
         (15, 20)
     """
+    session_stats, _ = process_session_file_with_count(
+        file_path, stat_calculators, force_reprocess, verbose
+    )
+    return session_stats
+
+
+def process_session_file_with_count(
+    file_path: Path,
+    stat_calculators: Optional[Dict[Stat, callable]] = None,
+    force_reprocess: bool = False,
+    verbose: bool = True
+) -> Tuple[Dict[str, Dict[Stat, Dict[str, Tuple[float, int]]]], int]:
+    """Like process_session_file, but also returns the session's hand count.
+
+    The count is authoritative: the persisted metadata.num_hands on a cache hit,
+    or len(parsed_hands) when freshly parsed. Callers reporting hand totals must
+    use this rather than deriving a count from per-player stats, which undercounts
+    (a player's N reflects only hands where they had a preflop opportunity).
+
+    Returns:
+        (session_stats, num_hands)
+    """
     if stat_calculators is None:
         stat_calculators = DEFAULT_STAT_CALCULATORS
 
@@ -64,7 +86,7 @@ def process_session_file(
     if agg_file_exists(file_path) and not force_reprocess:
         if verbose:
             print(f"Loading cached stats from {agg_file.name}")
-        return read_agg_file(agg_file)
+        return read_agg_file(agg_file), read_agg_num_hands(agg_file)
 
     # Process the file
     if verbose:
@@ -75,7 +97,7 @@ def process_session_file(
     if not hand_texts:
         if verbose:
             print(f"  Warning: No hands found in {file_path.name}")
-        return {}
+        return {}, 0
 
     # Parse hands to ParsedHand objects
     parsed_hands = []
@@ -87,17 +109,18 @@ def process_session_file(
     if not parsed_hands:
         if verbose:
             print(f"  Warning: Failed to parse any hands in {file_path.name}")
-        return {}
+        return {}, 0
 
     # Aggregate statistics (position-bucketed)
     session_stats = aggregate_session_by_position(parsed_hands, stat_calculators)
 
     # Write to .txt.agg file
-    write_agg_file(file_path, session_stats, len(parsed_hands))
+    num_hands = len(parsed_hands)
+    write_agg_file(file_path, session_stats, num_hands)
     if verbose:
-        print(f"  Processed {len(parsed_hands)} hands, wrote to {agg_file.name}")
+        print(f"  Processed {num_hands} hands, wrote to {agg_file.name}")
 
-    return session_stats
+    return session_stats, num_hands
 
 
 def aggregate_all_sessions(

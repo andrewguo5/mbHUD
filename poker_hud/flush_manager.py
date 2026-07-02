@@ -12,7 +12,7 @@ from typing import Optional
 
 from .config import AGG_FILES_DIR
 from .file_manager import find_hand_history_files
-from .processor import process_session_file
+from .processor import process_session_file_with_count
 from .agg_file import get_agg_file_path, agg_file_exists
 
 
@@ -126,17 +126,11 @@ def flush_all(verbose: bool = True) -> dict:
             skipped += 1
         else:
             # Process the file and create .agg
-            session_stats = process_session_file(file_path, force_reprocess=False, verbose=False)
-
-            # Count hands from first player's N stat
+            session_stats, hands_in_file = process_session_file_with_count(
+                file_path, force_reprocess=False, verbose=False
+            )
             if session_stats:
-                from .stats import Stat
-                first_player = next(iter(session_stats.values()))
-                # New format: player -> stat -> position -> (num, denom)
-                n_stat_positions = first_player.get(Stat.N, {})
-                hands_in_file = n_stat_positions.get("ALL", (0, 0))[0]
                 total_hands += hands_in_file
-
                 print(f"  [{i}/{total_files}] {file_path.name[:16]}..: Processed {hands_in_file} hands")
 
             processed += 1

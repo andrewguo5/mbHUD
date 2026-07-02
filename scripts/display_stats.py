@@ -4,7 +4,7 @@ Display overall statistics across all sessions in a readable format.
 """
 
 from poker_hud.file_manager import find_hand_history_files
-from poker_hud.processor import process_session_file, aggregate_all_sessions
+from poker_hud.processor import process_session_file_with_count, aggregate_all_sessions
 from poker_hud.stats import Stat
 
 
@@ -27,16 +27,9 @@ def main(page=1):
     total_hands = 0
 
     for i, file_path in enumerate(files, 1):
-        stats = process_session_file(file_path, verbose=False)
+        stats, hands_in_session = process_session_file_with_count(file_path, verbose=False)
         session_stats_list.append(stats)
-
-        # Count hands from first player's N stat
-        if stats:
-            first_player = next(iter(stats.values()))
-            # New format: player -> stat -> position -> (num, denom)
-            n_stat_positions = first_player.get(Stat.N, {})
-            hands_in_session = n_stat_positions.get("ALL", (0, 0))[0]
-            total_hands += hands_in_session
+        total_hands += hands_in_session
 
     # Aggregate across all sessions
     print(f"\n{'=' * 120}")

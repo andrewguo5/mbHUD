@@ -147,7 +147,7 @@ Dealt to aampersands [Qs 2s]
 
 `mbhud export` (script: `scripts/export_parsed_hands.py`) re-parses raw hand histories and persists each `ParsedHand` as JSON Lines, since the normal pipeline discards parsed hands after building `.txt.agg` files. This is the cross-project interchange format ("ParsedHand JSONL v2"):
 
-- Output: `~/PokerData/hands/<session>.jsonl` (one hand per line), `manifest.json`, and `SCHEMA.md` (the format spec)
+- Output: `~/.mbHUD/hands/<session>.jsonl` (one hand per line) and `manifest.json`
 - Each record = `ParsedHand.to_dict()` plus self-contained `hero` and `hero_seat` fields
 - Units are raw chips + blinds (lossless); consumers normalize to BB themselves
 - `ParsedHand` is intended as a source-agnostic standard — other poker sites add a parser that emits the same shape

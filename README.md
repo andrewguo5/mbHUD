@@ -29,7 +29,7 @@ Join a room on ACR and the display will begin tracking your stats. Note that sta
 If mbhud isn't recognized as a command, then your Python setup may be incomplete. On Windows, make sure both your Python folder and 
 Scripts folder are added to your PATH environment variable, then try again. 
 
-If Python works but mbhud doesn't, then it's likely that you need to also add your Scripts folder to your PATH.
+If Python works but mbhud doesn't, then it's likely that you need to also add your Scripts folder to your PATH. This is a fairly common issue, so you can easily check online for how to do that. 
 
 ---
 
@@ -40,6 +40,7 @@ If Python works but mbhud doesn't, then it's likely that you need to also add yo
 - Real-time display in command line (overlay is WIP)
 - Detailed stats view for all players you've ever encountered in your hand history
 - Everything is done via the command line (easier for nerds)
+- Integration into future analytics programs
 
 ## Installation
 
@@ -48,12 +49,12 @@ If Python works but mbhud doesn't, then it's likely that you need to also add yo
 Install directly from the [latest release](https://github.com/andrewguo5/mbHUD/releases/latest):
 
 ```bash
-pip3 install https://github.com/andrewguo5/mbHUD/releases/download/v0.4.0/mbhud-0.4.0-py3-none-any.whl
+pip3 install https://github.com/andrewguo5/mbHUD/releases/download/v0.4.1/mbhud-0.4.1-py3-none-any.whl
 ```
 
-Double check the latest version on the release page. I might not remember to update this README but both Claude and I will make an effort to do so.
+Double check the latest version on the release page. I might not remember to update this README. The above version lists 0.4.1.
 
-### Option 2: Install from Source (For Development)
+### Option 2: Install from Source
 
 1. **Clone the repository:**
 ```bash
@@ -63,12 +64,12 @@ cd mbHUD
 
 2. **Install the package:**
 ```bash
-pip3 install -e .
+pip3 install .
 ```
 
-This installs mbHUD in editable mode and creates the `mbhud` command. You can do this if you really want to see the source code, I guess.
+This creates the `mbhud` command. You can do this if you really want to see the source code, I guess.
 
-**Note:** If you see "command not found: pip", use `pip3` instead. See [INSTALL.md](INSTALL.md) for detailed troubleshooting.
+**Note:** If you see "command not found: pip", use `pip3` instead.
 
 ## Setup
 
@@ -81,6 +82,7 @@ This will:
 - Prompt for your ACR username
 - Prompt for your hand history directory
 - Process existing hand histories
+- Perform any data migrations necessary (if you were on an older version)
 - Create configuration file
 
 Default hand history locations:
@@ -89,11 +91,14 @@ Default hand history locations:
 
 ## How it Works
 
-The program makes a local copy of your ACR hand history folder and pre-processes it into aggregated files. Both of these types of files are stored in the /data/ directory. This pre-processing action is referred to as a "flush" by the program internals. If you see "last flush time" that means the last time hand histories were synced and processed, not the last time 5 cards came out with the same suit! 
+The program makes a local copy of your ACR hand history folder and pre-processes it into aggregated files. Both of these types of files are stored under `~/.mbHUD/`. This pre-processing action is referred to as a "flush" by the program internals. If you see "last flush time" that means the last time hand histories were synced and processed, not the last time 5 cards came out with the same suit! 
 
 You can run `mbhud start`, which will perform a flush and then start the live tracker (recommended), or you can manually run `mbhud flush` followed by `mbhud live` or `mbhud stats`. Always flush before starting the tracker or viewing stats if you want up-to-date information.
 
-To update the stats, run `mbhud flush` to process any new hands. When using the live tracker, you do not have to flush. It will watch the ACR hand history directory, detect any new hands, and update the stats automatically. However, the live process holds any stats on hands it sees in its process memory. After you're done, make sure you flush so that it saves that data to file. Stats only update after a hand is finished, so there is always a 1-hand delay. 
+To update the stats, run `mbhud flush` to process any new hands. When using the live tracker, you do not have to flush. It will watch the ACR hand history directory, detect any new hands, and update the stats automatically. However, the live process holds any stats on hands it sees in its process memory. Stats only update after a hand is finished, so there is always a 1-hand delay. 
+
+As of v0.4.1, there's now an `mbhud export` option which dumps hand history data in a format for future analytics apps to process.
+
 
 ## Commands
 
@@ -147,7 +152,7 @@ Delete the aggregated file cache. Use for debugging or maintenance purposes if y
 ```bash
 mbhud export
 ```
-Exports your parsed hand histories as JSON Lines (one hand per line) for use by other tools/projects. Writes to `~/PokerData/` by default, with a `SCHEMA.md` describing the format. Use `--out` to change the location and `--hero` to override the username.
+Exports your parsed hand histories as JSON Lines (one hand per line) for use by other tools/projects. Writes to `~/.mbHUD/hands/` by default. Use `--out` to change the location and `--hero` to override the username.
 
 **Watch file updates (debug):**
 ```bash
@@ -170,11 +175,11 @@ For debugger/dev use.
 - Wait for hand to complete (updates after each hand)
 
 **Configuration issues**
-- Check `config.json` in project root
+- Check `config.json` in `~/.mbHUD`
 - Run `mbhud init` to reconfigure
 
 **Command not found**
-- Make sure you ran `pip install -e .`
+- Make sure you ran `pip3 install .`
 - Check that Python's bin directory is in PATH
 
 **Windows CMD goes blank randomly during live tracking**

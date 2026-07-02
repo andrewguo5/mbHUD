@@ -1,7 +1,7 @@
 """
 Setup configuration for mbHUD package.
 
-Install with: pip install -e .
+Install with: pip3 install .
 """
 
 from setuptools import setup, find_packages
